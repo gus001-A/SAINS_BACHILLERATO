@@ -54,6 +54,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
 
+            'carrerasOferta' => fn () => \App\Models\CarreraBachillerato::oferta(),
+
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
@@ -67,7 +69,7 @@ class HandleInertiaRequests extends Middleware
                     'materno' => $estudiante->materno,
                     'nombre_completo' => trim("{$estudiante->nombre} {$estudiante->paterno} {$estudiante->materno}"),
                     'plan_activo' => (bool) $estudiante->plan_activo,
-                    'foto_url' => $estudiante->foto ? Storage::url($estudiante->foto) : null,
+                    'foto_url' => $estudiante->foto ? \App\Support\ArchivoUrl::foto($estudiante) : null,
                 ] : null,
                 'admin' => $admin ? [
                     'id' => $admin->id,

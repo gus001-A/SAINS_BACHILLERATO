@@ -84,7 +84,7 @@ const examColumns = [
         <a-row :gutter="16" style="margin-top: 4px">
             <a-col :xs="24" :lg="15">
                 <a-card :bordered="false">
-                    <template #title><CheckCircleOutlined style="color: #4f46e5" /> Últimos exámenes realizados</template>
+                    <template #title><CheckCircleOutlined style="color: #1851ad" /> Últimos exámenes realizados</template>
                     <template #extra><Link :href="route('admin.examenes-realizados.index')">Ver todos <RightOutlined style="font-size: 10px" /></Link></template>
                     <a-table :columns="examColumns" :data-source="ultimosExamenes" :pagination="false" row-key="id" size="small">
                         <template #emptyText><a-empty :image="null" description="Sin registros" /></template>
@@ -156,8 +156,8 @@ const examColumns = [
 .top-row__body { flex: 1; min-width: 0; }
 .top-row__name { font-size: 13px; font-weight: 600; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .top-bar { height: 6px; border-radius: 999px; background: #eef1f6; margin-top: 5px; overflow: hidden; }
-.top-bar__fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6366f1, #ec4899); }
-.top-row__score { font-weight: 800; color: #4f46e5; font-size: 15px; flex: none; }
+.top-bar__fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #1664db, #ec4899); }
+.top-row__score { font-weight: 800; color: #1851ad; font-size: 15px; flex: none; }
 
 .rank {
     width: 28px; height: 28px; border-radius: 50%; flex: none;

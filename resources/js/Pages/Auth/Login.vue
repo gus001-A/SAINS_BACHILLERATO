@@ -105,8 +105,8 @@ function submit() {
 }
 
 .au-google:hover {
-    border-color: #1d4ed8;
-    color: #1e3a8a;
+    border-color: #15509b;
+    color: #163964;
     text-decoration: none !important;
 }
 
@@ -136,7 +136,7 @@ function submit() {
 
 /* 👇 Enlaces SIN subrayado */
 .au-link {
-    color: #1d4ed8;
+    color: #15509b;
     font-weight: 600;
     text-decoration: none !important;
 }
@@ -144,7 +144,7 @@ function submit() {
 .au-link:hover,
 .au-link:focus,
 .au-link:visited {
-    color: #1e3a8a;
+    color: #163964;
     text-decoration: none !important;
 }
 

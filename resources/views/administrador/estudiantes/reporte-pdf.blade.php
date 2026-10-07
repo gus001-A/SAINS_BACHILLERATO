@@ -19,30 +19,30 @@
 
         /* ===== Encabezado ===== */
         .brandbar {
-            background: #4f46e5;
+            background: #1851ad;
             color: #ffffff;
             padding: 22px 34px;
         }
         .brandbar table { width: 100%; }
-        .brandbar .logo { width: 44px; height: auto; vertical-align: middle; }
+        .brandbar .logo { width: 96px; height: auto; vertical-align: middle; }
         .brandbar h1 {
             font-size: 20px; font-weight: 700; letter-spacing: 1px;
             display: inline-block; vertical-align: middle; margin-left: 12px;
         }
-        .brandbar .sub { font-size: 10px; color: #c7d2fe; margin-top: 3px; }
-        .brandbar .meta { text-align: right; font-size: 9px; color: #c7d2fe; line-height: 1.7; }
+        .brandbar .sub { font-size: 10px; color: #c5d5e9; margin-top: 3px; }
+        .brandbar .meta { text-align: right; font-size: 9px; color: #c5d5e9; line-height: 1.7; }
         .brandbar .meta strong { color: #ffffff; display: block; font-size: 11px; }
 
         /* ===== Ficha del estudiante ===== */
         .profile {
-            background: #eef2ff;
-            border: 1px solid #c7d2fe;
+            background: #eef3f9;
+            border: 1px solid #c5d5e9;
             border-radius: 10px;
             padding: 16px 18px;
             margin-bottom: 20px;
         }
-        .profile .name { font-size: 16px; font-weight: 700; color: #312e81; }
-        .profile .email { font-size: 10px; color: #6366f1; margin: 3px 0 9px; }
+        .profile .name { font-size: 16px; font-weight: 700; color: #17325d; }
+        .profile .email { font-size: 10px; color: #1664db; margin: 3px 0 9px; }
         .chip {
             display: inline-block;
             padding: 3px 11px;
@@ -62,7 +62,7 @@
             width: 33.33%;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-top: 3px solid #4f46e5;
+            border-top: 3px solid #1851ad;
             border-radius: 8px;
             padding: 12px 8px;
             text-align: center;
@@ -81,10 +81,10 @@
         .section-title {
             font-size: 11px;
             font-weight: 700;
-            color: #312e81;
+            color: #17325d;
             letter-spacing: 0.5px;
             padding: 0 0 6px 10px;
-            border-left: 3px solid #4f46e5;
+            border-left: 3px solid #1851ad;
             margin-bottom: 10px;
         }
 
@@ -109,7 +109,7 @@
 
         table.grid { width: 100%; border-collapse: collapse; }
         table.grid th {
-            background: #4f46e5;
+            background: #1851ad;
             color: #ffffff;
             padding: 7px 10px;
             text-align: left;
@@ -137,7 +137,7 @@
         .metrics .num { font-size: 16px; font-weight: 800; color: #0f172a; display: block; }
         .metrics .lbl { font-size: 8.5px; color: #64748b; margin: 3px 0; display: block; }
         .bar { background: #e2e8f0; height: 5px; border-radius: 3px; margin: 6px 0 3px; }
-        .bar > span { display: block; height: 5px; border-radius: 3px; background: #4f46e5; }
+        .bar > span { display: block; height: 5px; border-radius: 3px; background: #1851ad; }
 
         .score-high { color: #16a34a; font-weight: 700; }
         .score-low { color: #dc2626; font-weight: 700; }
@@ -161,7 +161,7 @@
         <table>
             <tr>
                 <td>
-                    <img src="{{ public_path('images/logo-sm.png') }}" class="logo" alt="SAINS">
+                    <img src="{{ public_path('images/bachillerato-nacional-sm.png') }}" class="logo" alt="Bachillerato Nacional SAINS">
                     <h1>SAINS BACHILLERATO</h1>
                     <div class="sub">ESTUDIA LA PREPARATORIA EN LINEA CON NOSOTROS</div>
                 </td>

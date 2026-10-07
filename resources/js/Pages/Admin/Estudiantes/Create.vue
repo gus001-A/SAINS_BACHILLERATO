@@ -13,6 +13,8 @@ const form = useForm({
     telefono: '', telefono_casa: '',
     email: '', password: '', password_confirmation: '',
     plan_activo: false, cupon_id: undefined,
+    carrera_id: undefined, curp: '', calle_numero: '', colonia: '',
+    codigo_postal: '', municipio: '', entidad_federativa: undefined,
 });
 
 const back = () => router.visit(route('admin.estudiantes.index'));

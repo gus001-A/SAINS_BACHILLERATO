@@ -24,6 +24,7 @@ const enInicio = computed(() => currentPath.value === '/' || currentPath.value =
 const links = [
     { label: 'Inicio', href: '/', icon: 'home', section: 'inicio' },
     { label: 'Nosotros', href: '/#nosotros', icon: 'info', section: 'nosotros' },
+    { label: 'Carreras', href: '/#carreras', icon: 'cap', section: 'carreras' },
     { label: 'Método', href: '/#metodo', icon: 'grid', section: 'metodo' },
     { label: 'Docentes', href: '/#docentes', icon: 'users', section: 'docentes' },
     { label: 'Plan Premium', href: '/#plan', icon: 'star', section: 'plan' },
@@ -104,6 +105,7 @@ onBeforeUnmount(() => {
 
 const icons = {
     home: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z',
+    cap: 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.42a12.08 12.08 0 01.66 6.48A11.95 11.95 0 0012 20.06a11.95 11.95 0 00-6.82-2.94 12.08 12.08 0 01.66-6.48L12 14z',
     grid: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
     users: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
     star: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z',
@@ -172,7 +174,7 @@ function logout() {
         <div class="pnav__inner">
             <!-- Logo -->
             <Link href="/" class="pnav__brand">
-                <img src="/images/logo_u.png" alt="SAINS" />
+                <img src="/images/bachillerato-nacional-sm.png" alt="Bachillerato Nacional SAINS" />
                 <span class="pnav__brand-underline"></span>
             </Link>
 
@@ -302,7 +304,7 @@ function logout() {
     position: absolute;
     inset: 0 0 auto 0;
     height: 2px;
-    background: linear-gradient(90deg, #1d4ed8, #4f46e5 40%, #7c3aed 60%, #f59e0b);
+    background: linear-gradient(90deg, #15509b, #1851ad 40%, #1550d0 60%, #f59e0b);
     background-size: 250% 100%;
     animation: pnav-flow 9s linear infinite;
     opacity: 0.9;
@@ -338,6 +340,8 @@ function logout() {
     flex: none;
 }
 .pnav__brand img {
+    max-width: 170px;
+    object-fit: contain;
     height: 42px;
     display: block;
     transition: transform 0.3s ease;
@@ -350,7 +354,7 @@ function logout() {
     height: 2.5px;
     width: 0;
     border-radius: 3px;
-    background: linear-gradient(90deg, #1d4ed8, #4f46e5, #f59e0b);
+    background: linear-gradient(90deg, #15509b, #1851ad, #f59e0b);
     transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .pnav__brand:hover .pnav__brand-underline { width: 100%; }
@@ -371,8 +375,8 @@ function logout() {
     left: 0;
     height: 34px;
     border-radius: 11px;
-    background: linear-gradient(135deg, rgba(29, 78, 216, 0.14), rgba(124, 58, 237, 0.14));
-    box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.22), 0 6px 16px -10px rgba(79, 70, 229, 0.5);
+    background: linear-gradient(135deg, rgba(21, 80, 155, 0.14), rgba(21, 80, 208, 0.14));
+    box-shadow: inset 0 0 0 1px rgba(21, 80, 155, 0.22), 0 6px 16px -10px rgba(24, 81, 173, 0.5);
     pointer-events: none;
     z-index: 0;
     transition:
@@ -398,10 +402,10 @@ function logout() {
     animation-delay: calc(var(--i, 0) * 45ms + 0.12s);
 }
 .pnav__link svg { width: 15px; height: 15px; opacity: 0.75; transition: transform 0.2s ease, opacity 0.2s ease; }
-.pnav__link:hover { color: #1d4ed8; background: rgba(29, 78, 216, 0.06); }
+.pnav__link:hover { color: #15509b; background: rgba(21, 80, 155, 0.06); }
 .pnav__link:hover svg { transform: translateY(-1px); }
 .pnav__link:active { transform: scale(0.96); }
-.pnav__link.is-active { color: #1e3a8a; }
+.pnav__link.is-active { color: #163964; }
 .pnav__link.is-active svg { opacity: 1; animation: pnav-pop 0.45s ease; }
 @keyframes pnav-link-in {
     from { opacity: 0; transform: translateY(-9px); }
@@ -430,19 +434,19 @@ function logout() {
 }
 .pnav__btn svg { width: 15px; height: 15px; }
 .pnav__btn--ghost {
-    color: #1d4ed8;
+    color: #15509b;
     background: transparent;
-    box-shadow: inset 0 0 0 1.5px rgba(29, 78, 216, 0.35);
+    box-shadow: inset 0 0 0 1.5px rgba(21, 80, 155, 0.35);
 }
-.pnav__btn--ghost:hover { background: rgba(29, 78, 216, 0.08); box-shadow: inset 0 0 0 1.5px #1d4ed8; }
+.pnav__btn--ghost:hover { background: rgba(21, 80, 155, 0.08); box-shadow: inset 0 0 0 1.5px #15509b; }
 .pnav__btn--solid {
     position: relative;
     overflow: hidden;
     color: #fff;
-    background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 55%, #7c3aed 100%);
-    box-shadow: 0 12px 26px -12px rgba(79, 70, 229, 0.6);
+    background: linear-gradient(135deg, #15509b 0%, #1851ad 55%, #1550d0 100%);
+    box-shadow: 0 12px 26px -12px rgba(24, 81, 173, 0.6);
 }
-.pnav__btn--solid:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -12px rgba(79, 70, 229, 0.75); color: #fff; }
+.pnav__btn--solid:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -12px rgba(24, 81, 173, 0.75); color: #fff; }
 .pnav__btn--solid::after {
     content: '';
     position: absolute;
@@ -463,13 +467,13 @@ function logout() {
     align-items: center;
     gap: 9px;
     padding: 5px 12px 5px 5px;
-    border: 1px solid #e8eaf6;
+    border: 1px solid #e4ebf5;
     border-radius: 999px;
-    background: linear-gradient(135deg, #f6f7fb, #eef1fb);
+    background: linear-gradient(135deg, #f5f7fb, #edf2f8);
     cursor: pointer;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
-.pnav__user:hover { border-color: #c7d2fe; box-shadow: 0 6px 16px -10px rgba(29, 78, 216, 0.5); transform: translateY(-1px); }
+.pnav__user:hover { border-color: #c5d5e9; box-shadow: 0 6px 16px -10px rgba(21, 80, 155, 0.5); transform: translateY(-1px); }
 .pnav__avatar {
     width: 30px;
     height: 30px;
@@ -478,11 +482,11 @@ function logout() {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1d4ed8, #4f46e5);
+    background: linear-gradient(135deg, #15509b, #1851ad);
     color: #fff;
     font-size: 12px;
     font-weight: 700;
-    box-shadow: 0 4px 10px -4px rgba(29, 78, 216, 0.6);
+    box-shadow: 0 4px 10px -4px rgba(21, 80, 155, 0.6);
 }
 .pnav__uname {
     font-size: 12.5px;
@@ -511,7 +515,7 @@ function logout() {
     display: block;
     height: 3px;
     border-radius: 3px;
-    background: #1e3a8a;
+    background: #163964;
     transition: transform 0.28s ease, opacity 0.2s ease;
 }
 .pnav__burger.open span:nth-child(1) { transform: translateY(8.5px) rotate(45deg); }
@@ -544,11 +548,11 @@ function logout() {
     transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 .pnav__mlink svg { width: 17px; height: 17px; opacity: 0.75; }
-.pnav__mlink:hover { background: rgba(29, 78, 216, 0.06); color: #1d4ed8; transform: translateX(3px); }
+.pnav__mlink:hover { background: rgba(21, 80, 155, 0.06); color: #15509b; transform: translateX(3px); }
 .pnav__mlink.is-active {
-    background: linear-gradient(135deg, rgba(29, 78, 216, 0.12), rgba(124, 58, 237, 0.1));
-    color: #1e3a8a;
-    box-shadow: inset 2px 0 0 #1d4ed8;
+    background: linear-gradient(135deg, rgba(21, 80, 155, 0.12), rgba(21, 80, 208, 0.1));
+    color: #163964;
+    box-shadow: inset 2px 0 0 #15509b;
 }
 .pnav__mlink.is-active svg { opacity: 1; }
 .pnav__mlink.is-danger { color: #dc2626; }
@@ -600,7 +604,7 @@ function logout() {
     gap: 11px;
     padding: 13px 12px 14px;
     margin: -6px -6px 6px;
-    background: linear-gradient(135deg, #1d4ed8, #4f46e5);
+    background: linear-gradient(135deg, #15509b, #1851ad);
     color: #fff;
 }
 .pnav-menu__avatar {
@@ -641,8 +645,8 @@ function logout() {
     color: #475569;
     transition: background 0.14s ease, color 0.14s ease;
 }
-.pnav-menu__item svg { width: 15px; height: 15px; color: #4f46e5; }
-.pnav-menu__item:hover { background: #eef2ff; color: #1e3a8a; }
+.pnav-menu__item svg { width: 15px; height: 15px; color: #1851ad; }
+.pnav-menu__item:hover { background: #eef3f9; color: #163964; }
 .pnav-menu__item.is-danger { color: #dc2626; }
 .pnav-menu__item.is-danger svg { color: #dc2626; }
 .pnav-menu__item.is-danger:hover { background: #fee2e2; color: #b91c1c; }

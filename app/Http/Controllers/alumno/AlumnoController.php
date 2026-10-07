@@ -35,6 +35,8 @@ class AlumnoController extends Controller
     const MIN_PREGUNTAS_BASICO = 3;
     const MAX_PREGUNTAS_BASICO = 5;
     const PRECIO_CURSO = 800;
+    const TIPOS_SIMULADOR = ['Simulación', 'simulacion', 'Simulacion', 'Simulador', 'simulador'];
+    const TIPOS_CERTIFICACION = ['Certificado', 'certificado', 'Certificación', 'Certificacion', 'certificación', 'certificacion'];
 
     // ========== PANEL PRINCIPAL ==========
     
@@ -109,9 +111,13 @@ class AlumnoController extends Controller
                 'cupon' => $estudiante->cupon,
                 'plan_activo' => (bool) $estudiante->plan_activo,
                 'universidad_interes' => $estudiante->universidad_interes,
-                'foto_url' => $estudiante->foto ? Storage::url($estudiante->foto) : null,
+                'foto_url' => $estudiante->foto ? \App\Support\ArchivoUrl::foto($estudiante) : null,
                 'fecha_inscripcion' => optional($estudiante->fecha_inscripcion)->format('Y-m-d'),
+                ...\App\Support\DatosIssfam::valores($estudiante),
             ],
+            ...\App\Support\DatosIssfam::catalogos(),
+            'candado' => $estudiante->candadoEdiciones(),
+            'videoDocumentos' => \App\Support\VideoTutorial::documentos(),
             'universidades' => $universidades->map(fn ($u) => [
                 'id' => $u->id,
                 'clave' => $u->clave,
@@ -151,6 +157,7 @@ class AlumnoController extends Controller
 
         return \Inertia\Inertia::render('Estudiante/CompletarPerfil', [
             'correo' => $user->correo,
+            ...\App\Support\DatosIssfam::catalogos(),
             'preparatorias' => \App\Models\Preparatoria::orderBy('centro_educativo')
                 ->get(['id', 'centro_educativo', 'estado'])
                 ->map(fn ($p) => [
@@ -168,7 +175,8 @@ class AlumnoController extends Controller
 
     public function completarPerfil(Request $request)
     {
-        $request->validate([
+        \App\Support\DatosIssfam::normalizar($request);
+        $request->validate(\App\Support\DatosIssfam::reglas(true) + [
             'nombre' => 'required|string|max:255',
             'paterno' => 'required|string|max:255',
             'materno' => 'nullable|string|max:255',
@@ -183,7 +191,7 @@ class AlumnoController extends Controller
             'telefono.regex' => 'El teléfono debe tener 10 dígitos.',
             'telefono_casa.regex' => 'El teléfono de casa debe tener entre 7 y 10 dígitos.',
             'fecha_nacimiento.before' => 'La fecha de nacimiento debe ser anterior a hoy.',
-        ]);
+        ] + \App\Support\DatosIssfam::mensajes(), \App\Support\DatosIssfam::atributos());
 
         try {
             $user = Auth::user();
@@ -208,7 +216,8 @@ class AlumnoController extends Controller
                 'plan_activo' => false,
                 'universidad_interes' => $request->universidad_interes,
                 'foto' => null,
-                'usuario' => $user->id
+                'usuario' => $user->id,
+                ...$request->only(\App\Support\DatosIssfam::CAMPOS),
             ]);
 
             // Cupón que cubre el 100% → activa Premium automáticamente (sin pago).
@@ -314,7 +323,8 @@ class AlumnoController extends Controller
                 ], 404);
             }
             
-            $request->validate([
+            \App\Support\DatosIssfam::normalizar($request);
+            $request->validate(\App\Support\DatosIssfam::reglas(true, $estudiante->id) + [
                 'nombre' => 'required|string|max:255',
                 'paterno' => 'nullable|string|max:255',
                 'materno' => 'nullable|string|max:255',
@@ -325,26 +335,54 @@ class AlumnoController extends Controller
             ], [
                 'telefono.regex' => 'El teléfono debe tener 10 dígitos.',
                 'fecha_nacimiento.before' => 'La fecha de nacimiento debe ser anterior a hoy.',
-            ]);
-            
-            $estudiante->update([
+            ] + \App\Support\DatosIssfam::mensajes(), \App\Support\DatosIssfam::atributos());
+
+            $estudiante->fill([
                 'nombre' => $request->nombre,
                 'paterno' => $request->paterno,
                 'materno' => $request->materno,
                 'telefono' => $request->telefono,
                 'fecha_nacimiento' => $request->fecha_nacimiento,
                 'sexo' => $request->sexo,
+                ...$request->only(\App\Support\DatosIssfam::CAMPOS),
             ]);
-            
-            if ($request->correo !== $user->correo) {
+            $cambiaCorreo = $request->correo !== $user->correo;
+
+            if (!$estudiante->isDirty() && !$cambiaCorreo) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No hiciste cambios.',
+                    'candado' => $estudiante->candadoEdiciones(),
+                ]);
+            }
+
+            // Candado de datos: 2 cambios por día y 5 en total.
+            $candado = $estudiante->candadoEdiciones();
+            if ($candado['bloqueado']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $candado['motivo'],
+                    'candado' => $candado,
+                ], 423);
+            }
+
+            $estudiante->registrarEdicion();
+            $estudiante->save();
+
+            if ($cambiaCorreo) {
                 $user->correo = $request->correo;
                 $user->save();
             }
-            
+
+            $candado = $estudiante->candadoEdiciones();
+
             return response()->json([
                 'success' => true,
-                'message' => 'Perfil actualizado correctamente',
-                'nuevo_correo' => $user->correo
+                'message' => $candado['restantes_total'] === 0
+                    ? 'Datos guardados. Era tu último cambio permitido: tus datos quedaron bloqueados.'
+                    : "Datos guardados. Te quedan {$candado['restantes_total']} cambios en total ({$candado['restantes_hoy']} hoy).",
+                'nuevo_correo' => $user->correo,
+                'candado' => $candado,
             ]);
             
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -427,7 +465,7 @@ class AlumnoController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => '¡Foto de perfil actualizada exitosamente!',
-                'foto_url' => Storage::url($fotoPath)
+                'foto_url' => \App\Support\ArchivoUrl::foto($estudiante)
             ]);
             
         } catch (\Exception $e) {
@@ -455,7 +493,7 @@ class AlumnoController extends Controller
         return response()->json([
             'success' => true,
             'tiene_foto' => true,
-            'foto_url' => Storage::url($estudiante->foto),
+            'foto_url' => \App\Support\ArchivoUrl::foto($estudiante),
             'foto_path' => $estudiante->foto
         ]);
     }
@@ -508,7 +546,7 @@ class AlumnoController extends Controller
             'estudiante' => $estudiante,
             'tiene_perfil' => $estudiante ? true : false,
             'tiene_foto' => $estudiante && $estudiante->foto ? true : false,
-            'foto_url' => $estudiante && $estudiante->foto ? Storage::url($estudiante->foto) : null
+            'foto_url' => $estudiante && $estudiante->foto ? \App\Support\ArchivoUrl::foto($estudiante) : null
         ]);
     }
 
@@ -1170,7 +1208,7 @@ class AlumnoController extends Controller
             'monto_pago' => (float) $pago->monto_pago,
             'estatus' => $pago->estatus,
             'referencia_pago' => $pago->referencia_pago,
-            'comprobante_url' => $pago->comprobante ? Storage::url($pago->comprobante) : null,
+            'comprobante_url' => $pago->comprobante ? \App\Support\ArchivoUrl::comprobante($pago) : null,
             'nota_usuario' => $pago->nota_usuario,
             'fecha_pago' => optional($pago->fecha_pago)->toIso8601String(),
             'fecha_pago_formato' => optional($pago->fecha_pago)->format('d/m/Y H:i'),
@@ -1288,7 +1326,7 @@ class AlumnoController extends Controller
                     [
                         'id' => 'curso_sains_2026',
                         'title' => 'Curso Premium SAINS 2026',
-                        'description' => 'Acceso completo al curso premium de preparación para examen de admisión',
+                        'description' => 'Plan Premium · Bachillerato Tecnológico (SAINS · ISSFAM)',
                         'quantity' => 1,
                         'currency_id' => 'MXN',
                         'unit_price' => round($precioFinal, 2)
@@ -1937,51 +1975,123 @@ class AlumnoController extends Controller
 
     private function simuladorPremium($estudiante, $examenId = null)
     {
-        $examenes = ExamenGenerado::where('tipo_examen', 'Simulación')
-            ->orWhere('tipo_examen', 'simulacion')
-            ->orWhere('tipo_examen', 'Simulador')
-            ->orWhere('tipo_examen', 'simulador')
-            ->get();
-        
+        $examenes = ExamenGenerado::whereIn('tipo_examen', self::TIPOS_SIMULADOR)->get();
+
         if ($examenes->isEmpty()) {
-            return redirect()->route('estudiante.dashboard')->with('error', 'No hay simuladores disponibles');
+            return redirect()->route('estudiante.examenes')->with('error', 'No hay simuladores disponibles');
         }
-        
+
         $examen = $examenId ? $examenes->find($examenId) : $examenes->first();
-        
+
         if (!$examen) {
             return redirect()->route('estudiante.simulador')->with('error', 'Examen no encontrado');
         }
-        
-        $preguntas = $examen->preguntas()->get();
-        
-        if ($preguntas->isEmpty()) {
-            return redirect()->route('estudiante.simulador')->with('error', 'El simulador no tiene preguntas configuradas');
+
+        $banco = $examen->preguntas()->get();
+
+        if ($banco->isEmpty()) {
+            return redirect()->route('estudiante.examenes')->with('error', 'El simulador no tiene preguntas configuradas');
         }
-        
+
+        $tamanos = config('issfam.simulador_tamanos', [50, 150, 250]);
+        $tamano = (int) request()->query('preguntas');
+
         $intentosRealizados = ExamenRealizado::where('estudiante', $estudiante->id)
             ->where('examen', $examen->id)
             ->count();
 
-        return \Inertia\Inertia::render('Estudiante/Simulador', [
+        $base = [
             'examen' => $this->datosExamen($examen),
-            'preguntas' => $this->formatearPreguntasQuiz($preguntas),
             'intento' => $intentosRealizados + 1,
             'planActivo' => true,
             'intentosRestantes' => null,
             'maxPreguntas' => null,
             'examenes' => $examenes->map(fn ($e) => $this->datosExamen($e))->values(),
             'responderUrl' => route('estudiante.simulador.responder'),
+            'tamanos' => $tamanos,
+            'disponibles' => $banco->count(),
+        ];
+
+        // Primero se elige de cuántas preguntas será el examen de prueba.
+        if (!in_array($tamano, $tamanos, true)) {
+            return \Inertia\Inertia::render('Estudiante/Simulador', $base + ['preguntas' => [], 'elegirTamano' => true]);
+        }
+
+        $preguntas = $this->muestraPreguntas($banco, $tamano, "sim-{$estudiante->id}-{$examen->id}-{$tamano}-" . ($intentosRealizados + 1));
+
+        return \Inertia\Inertia::render('Estudiante/Simulador', array_merge($base, [
+            'examen' => $this->datosExamenMuestra($examen, $preguntas->count(), $banco->count()),
+            'preguntas' => $this->formatearPreguntasQuiz($preguntas),
+            'tamano' => $tamano,
+        ]));
+    }
+
+    /**
+     * Toma N preguntas al azar del banco del examen. La semilla depende del estudiante
+     * y del intento, así que recargar la página muestra las mismas preguntas.
+     */
+    private function muestraPreguntas($banco, int $cantidad, string $semilla)
+    {
+        $azar = new \Random\Randomizer(new \Random\Engine\Mt19937(crc32($semilla)));
+
+        return collect($azar->shuffleArray($banco->values()->all()))->take($cantidad)->values();
+    }
+
+    /** Datos del examen con el tiempo ajustado proporcionalmente al número de preguntas. */
+    private function datosExamenMuestra($examen, int $cantidad, int $totalBanco): array
+    {
+        $datos = $this->datosExamen($examen);
+        $base = max(1, (int) ($examen->numero_preguntas ?: $totalBanco));
+        $minutos = (int) ($examen->tiempo ?: 0);
+        $datos['tiempo'] = $minutos > 0 ? max(10, (int) ceil($minutos * $cantidad / $base)) : (int) ceil($cantidad * 1.2);
+        $datos['numero_preguntas'] = $cantidad;
+
+        return $datos;
+    }
+
+    /** Examen para certificar: 250 preguntas del examen de tipo "Certificación". */
+    public function certificacion()
+    {
+        $estudiante = Estudiante::where('usuario', Auth::id())->first();
+
+        if (!$estudiante) {
+            return redirect()->route('estudiante.completar-perfil')->with('warning', 'Primero completa tu perfil');
+        }
+        if (!$estudiante->plan_activo) {
+            return redirect()->route('estudiante.examenes')->with('warning', 'El examen para certificar requiere el plan Premium.');
+        }
+
+        $examen = ExamenGenerado::whereIn('tipo_examen', self::TIPOS_CERTIFICACION)->latest('id')->first();
+        if (!$examen) {
+            return redirect()->route('estudiante.examenes')->with('error', 'El examen para certificar aún no está disponible.');
+        }
+
+        $banco = $examen->preguntas()->get();
+        if ($banco->isEmpty()) {
+            return redirect()->route('estudiante.examenes')->with('error', 'El examen para certificar aún no tiene preguntas.');
+        }
+
+        $intentos = ExamenRealizado::where('estudiante', $estudiante->id)->where('examen', $examen->id)->count();
+        $cantidad = (int) config('issfam.certificacion_preguntas', 250);
+        $preguntas = $this->muestraPreguntas($banco, $cantidad, "cert-{$estudiante->id}-{$examen->id}-" . ($intentos + 1));
+
+        return \Inertia\Inertia::render('Estudiante/Simulador', [
+            'examen' => $this->datosExamenMuestra($examen, $preguntas->count(), $banco->count()),
+            'preguntas' => $this->formatearPreguntasQuiz($preguntas),
+            'intento' => $intentos + 1,
+            'planActivo' => true,
+            'intentosRestantes' => null,
+            'maxPreguntas' => null,
+            'examenes' => [],
+            'responderUrl' => route('estudiante.simulador.responder'),
+            'certificacion' => true,
+            'disponibles' => $banco->count(),
         ]);
     }
 
     private function simuladorBasico($estudiante, $examenId = null)
     {
-        $examenes = ExamenGenerado::where('tipo_examen', 'Simulación')
-            ->orWhere('tipo_examen', 'simulacion')
-            ->orWhere('tipo_examen', 'Simulador')
-            ->orWhere('tipo_examen', 'simulador')
-            ->get();
+        $examenes = ExamenGenerado::whereIn('tipo_examen', self::TIPOS_SIMULADOR)->get();
         
         if ($examenes->isEmpty()) {
             return redirect()->route('estudiante.dashboard')->with('error', 'No hay simuladores disponibles');
@@ -2059,7 +2169,7 @@ class AlumnoController extends Controller
             $respuestas = $request->respuestas;
             $tiempoUtilizadoSegundos = intval($request->tiempo_utilizado_segundos ?? 0);
             
-            if (!$examen_id || !$respuestas || count($respuestas) == 0) {
+            if (!$examen_id || !is_array($respuestas)) {
                 return response()->json(['success' => false, 'message' => 'Datos incompletos'], 400);
             }
             
@@ -2083,7 +2193,12 @@ class AlumnoController extends Controller
                 }
             }
             
-            if ($estudiante->plan_activo) {
+            // Se califica sobre las preguntas que se le mostraron (muestra de 50/150/250);
+            // si el cliente no las manda (versión vieja), se usa el comportamiento anterior.
+            $mostradas = collect($request->input('preguntas_ids', []))->map(fn ($id) => (int) $id)->filter()->unique();
+            if ($mostradas->isNotEmpty()) {
+                $preguntasExamen = $examen->preguntas()->whereIn('preguntas.id', $mostradas->all())->get();
+            } elseif ($estudiante->plan_activo) {
                 $preguntasExamen = $examen->preguntas()->get();
             } else {
                 $preguntasIds = array_keys($respuestas);

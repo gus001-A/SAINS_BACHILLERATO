@@ -18,7 +18,9 @@ const props = defineProps({
     maxPreguntas: { type: Number, default: null },
     intentosRestantes: { type: Number, default: null },
     storageKey: { type: String, default: 'quiz' },
-    accent: { type: String, default: '#4f46e5' },
+    accent: { type: String, default: '#1851ad' },
+    // Examen de prueba: número de preguntas elegido (50/150/250); se conserva al cambiar de simulador.
+    tamano: { type: Number, default: null },
 });
 
 const lsKey = `${props.storageKey}_${props.examen.id}`;
@@ -121,6 +123,8 @@ async function enviar() {
         const { data } = await axios.post(props.responderUrl, {
             examen_id: props.examen.id,
             respuestas: { ...respuestas },
+            // Preguntas que realmente se mostraron: se califica sobre ellas, no sobre todo el banco.
+            preguntas_ids: props.preguntas.map((p) => p.id),
             tiempo_utilizado_segundos: usados,
         });
         if (data.success) {
@@ -157,7 +161,7 @@ function arrancarTimer() {
 
 function cambiarExamen(id) {
     if (id === props.examen.id) return;
-    const go = () => router.visit(route('estudiante.simulador.cargar', id));
+    const go = () => router.visit(route('estudiante.simulador.cargar', props.tamano ? { id, preguntas: props.tamano } : id));
     if (respondidas.value > 0) {
         Modal.confirm({
             title: '¿Cambiar de examen?',
@@ -178,7 +182,8 @@ onMounted(() => {
     try {
         const savedR = JSON.parse(localStorage.getItem(`${lsKey}_r`) || 'null');
         if (savedR && typeof savedR === 'object') {
-            Object.entries(savedR).forEach(([k, v]) => { respuestas[k] = v; });
+            const ids = new Set(props.preguntas.map((p) => String(p.id)));
+            Object.entries(savedR).forEach(([k, v]) => { if (ids.has(String(k))) respuestas[k] = v; });
         }
         const savedT = parseInt(localStorage.getItem(`${lsKey}_t`) || '0', 10);
         if (savedT > 0 && savedT <= limiteSegundos) restante.value = savedT;
@@ -298,7 +303,7 @@ onBeforeUnmount(() => clearInterval(timer));
 .quiz-top {
     position: relative; overflow: hidden; isolation: isolate;
     display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;
-    background: linear-gradient(135deg, var(--accent), #6366f1);
+    background: linear-gradient(135deg, var(--accent), #1664db);
     color: #fff; border-radius: 20px; padding: 24px 28px; margin-bottom: 18px;
     box-shadow: 0 20px 45px -24px var(--accent);
 }
@@ -336,7 +341,7 @@ onBeforeUnmount(() => clearInterval(timer));
     transition: all .15s ease;
 }
 .quiz-nav-dot.done { background: #dcfce7; border-color: #86efac; color: #15803d; }
-.quiz-nav-dot.active { border-color: var(--accent, #4f46e5); box-shadow: 0 0 0 2px rgba(79,70,229,.18); }
+.quiz-nav-dot.active { border-color: var(--accent, #1851ad); box-shadow: 0 0 0 2px rgba(24, 81, 173,.18); }
 
 .quiz-question-head { margin-bottom: 12px; }
 .quiz-question-num { font-weight: 700; color: #0f172a; }
@@ -348,7 +353,7 @@ onBeforeUnmount(() => clearInterval(timer));
     border: 1px solid #e2e8f0; border-radius: 13px; cursor: pointer; transition: all .15s ease;
 }
 .quiz-option:hover { background: #f8fafc; transform: translateX(2px); }
-.quiz-option.selected { border-color: var(--accent, #4f46e5); background: #eef2ff; }
+.quiz-option.selected { border-color: var(--accent, #1851ad); background: #eef3f9; }
 .quiz-option input { position: absolute; opacity: 0; pointer-events: none; }
 .quiz-option-letter {
     width: 28px; height: 28px; border-radius: 8px; flex: none;
@@ -356,14 +361,14 @@ onBeforeUnmount(() => clearInterval(timer));
     font-size: 12.5px; font-weight: 700; color: #64748b;
     background: #f1f5f9; transition: all .15s ease;
 }
-.quiz-option.selected .quiz-option-letter { background: var(--accent, #4f46e5); color: #fff; }
+.quiz-option.selected .quiz-option-letter { background: var(--accent, #1851ad); color: #fff; }
 .quiz-option-mark {
     width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cbd5e1; flex: none;
     display: flex; align-items: center; justify-content: center; font-size: 11px; color: transparent;
     transition: all .15s ease;
 }
 .quiz-option.selected .quiz-option-mark {
-    border-color: var(--accent, #4f46e5); background: var(--accent, #4f46e5); color: #fff;
+    border-color: var(--accent, #1851ad); background: var(--accent, #1851ad); color: #fff;
 }
 .quiz-option-text { flex: 1; font-size: .95rem; color: #1e293b; }
 .quiz-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 22px; }

@@ -1,20 +1,14 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import {
-    ReadFilled, TeamOutlined, BarChartOutlined,
-} from '@ant-design/icons-vue';
+import { computed } from 'vue';
+import { Head, usePage } from '@inertiajs/vue3';
 import { authTheme, antdLocale } from '@/theme';
 import PublicNav from '@/Components/PublicNav.vue';
 
 defineProps({
-    title: { type: String, default: 'SAINS' },
+    title: { type: String, default: 'ISSFAM · SAINS' },
 });
 
-const features = [
-    { icon: ReadFilled, t: 'Método comprobado', d: 'Aprendizaje eficaz para tu ingreso al bachillerato.' },
-    { icon: TeamOutlined, t: 'Docentes expertos', d: 'Profesionales con experiencia y vocación docente.' },
-    { icon: BarChartOutlined, t: 'Plan Premium', d: 'Recursos exclusivos y seguimiento personalizado.' },
-];
+const carreras = computed(() => usePage().props.carrerasOferta ?? []);
 </script>
 
 <template>
@@ -26,32 +20,42 @@ const features = [
         <div class="au">
             <!-- Panel de marca -->
             <aside class="au-brand">
-                <span class="au-brand__dots" aria-hidden="true"></span>
                 <span class="au-brand__arc" aria-hidden="true"></span>
                 <span class="au-brand__ring" aria-hidden="true"></span>
 
                 <div class="au-brand__inner">
-                    <h2 class="au-brand__title">
-                        Asegura <span>tu lugar</span> en el bachillerato de tus sueños
-                    </h2>
+                    <div class="au-org">
+                        <img src="/images/bachillerato-nacional-sm.png" alt="Bachillerato Nacional SAINS" class="au-org__logo" />
+                    </div>
+
+                    <p class="au-brand__lead">
+                        Una <b>prestación de servicio estratégico</b> para personal y beneficiarios de la
+                        <b>Guardia Nacional</b>, que les permite acceder a <b>Educación Media Superior</b>.
+                    </p>
                     <p class="au-brand__sub">
-                        Fórmate con nuestro método, docentes expertos y acompañamiento personalizado.
+                        Esta oferta educativa consiste en un <b>Bachillerato Tecnológico con Formación Profesional</b>,
+                        el cual se imparte en modalidades <b>autoplaneada y mixta</b> a través de planteles oficiales.
                     </p>
 
-                    <ul class="au-feats">
-                        <li v-for="(f, i) in features" :key="f.t" :style="{ '--d': i * 90 + 'ms' }">
-                            <span class="au-feats__ic"><component :is="f.icon" /></span>
-                            <b>{{ f.t }}</b>
-                            <small>{{ f.d }}</small>
-                        </li>
-                    </ul>
+                    <template v-if="carreras.length">
+                        <div class="au-sep" aria-hidden="true"><i class="fas fa-book-open"></i></div>
+                        <h3 class="au-carr__title">Carreras que se ofertan</h3>
+                        <ul class="au-carr">
+                            <li v-for="(c, i) in carreras" :key="c.id" :style="{ '--d': i * 90 + 'ms' }">
+                                <span class="au-carr__ic"><i class="fas" :class="c.icono"></i></span>
+                                <b>{{ c.nombre }}</b>
+                            </li>
+                        </ul>
+                    </template>
                 </div>
             </aside>
 
             <!-- Panel del formulario -->
             <main class="au-side">
                 <div class="au-card">
-                    <img src="/images/logo_u.png" alt="SAINS" class="au-card__logo" />
+                    <div class="au-card__logos">
+                        <img src="/images/bachillerato-nacional-sm.png" alt="Bachillerato Nacional SAINS" />
+                    </div>
 
                     <h1 class="au-card__title"><slot name="title">Bienvenido</slot></h1>
                     <p class="au-card__sub"><slot name="subtitle" /></p>
@@ -64,6 +68,16 @@ const features = [
                     </template>
 
                     <p class="au-card__foot"><slot name="footer" /></p>
+                </div>
+
+                <div v-if="carreras.length" class="au-carr-movil">
+                    <h3 class="au-carr__title">Carreras que se ofertan</h3>
+                    <ul class="au-carr">
+                        <li v-for="c in carreras" :key="c.id" style="opacity: 1; animation: none">
+                            <span class="au-carr__ic"><i class="fas" :class="c.icono"></i></span>
+                            <b>{{ c.nombre }}</b>
+                        </li>
+                    </ul>
                 </div>
             </main>
         </div>
@@ -88,7 +102,11 @@ const features = [
     align-items: center;
     padding: 56px 132px 56px 7%;
     color: #fff;
-    background: linear-gradient(158deg, #1e3a8a 0%, #1d4ed8 52%, #1e40af 100%);
+    background:
+        linear-gradient(180deg, rgba(10, 33, 92, .18) 0%, rgba(10, 33, 92, .32) 40%, rgba(9, 30, 84, .62) 75%, rgba(9, 30, 84, .82) 100%),
+        linear-gradient(90deg, rgba(9, 30, 84, .5) 0%, rgba(9, 30, 84, .2) 55%, rgba(9, 30, 84, 0) 100%),
+        url('/images/fondo-auth-issfam.jpg') 82% 100% / auto 112% no-repeat,
+        #0b2a63;
 }
 /* curva blanca que empalma con el lado del formulario */
 .au-brand::after {
@@ -118,7 +136,7 @@ const features = [
     width: 320px;
     height: 320px;
     border-radius: 50%;
-    background: radial-gradient(circle at 38% 38%, #fbbf24, #f59e0b 60%, transparent 68%);
+    background: radial-gradient(circle at 38% 38%, #ffc933, #f5b301 60%, transparent 68%);
     opacity: .92;
     animation: au-float 9s ease-in-out infinite;
 }
@@ -139,110 +157,109 @@ const features = [
 .au-brand__inner {
     position: relative;
     z-index: 2;
-    max-width: 500px;
+    max-width: 560px;
     width: 100%;
     animation: au-slide-in .6s cubic-bezier(.16, 1, .3, 1);
 }
 @keyframes au-slide-in { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
 
-.au-brand__title {
-    font-size: clamp(1.7rem, 2.6vw, 2.35rem);
+.au-org { margin-bottom: 26px; }
+.au-org__logo {
+    display: block;
+    height: 104px;
+    max-width: 100%;
+    object-fit: contain;
+    padding: 12px 22px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .55);
+}
+
+.au-brand__lead,
+.au-brand__sub { color: rgba(255, 255, 255, .9); line-height: 1.5; margin: 0 0 12px; }
+.au-brand__lead { font-size: 1.12rem; }
+.au-brand__sub { font-size: .98rem; margin-bottom: 0; }
+.au-brand__lead b,
+.au-brand__sub b { color: #f5b301; font-weight: 700; }
+
+.au-sep {
+    position: relative;
+    margin: 24px 0 18px;
+    height: 2px;
+    background: linear-gradient(90deg, #f5b301 0 46%, transparent 46% 54%, #3b82f6 54% 100%);
+    border-radius: 2px;
+}
+.au-sep i {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    color: #f5b301; font-size: 18px;
+}
+.au-carr__title {
+    margin: 0 0 16px;
+    font-size: 1.02rem;
     font-weight: 800;
-    line-height: 1.22;
-    margin: 0 0 14px;
-    letter-spacing: -.01em;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: #fff;
 }
-.au-brand__title span {
-    color: #fbbf24;
+.au-carr {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 14px;
+}
+.au-carr li {
     position: relative;
-    white-space: nowrap;
-}
-.au-brand__title span::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; bottom: 2px;
-    height: 8px;
-    background: rgba(251, 191, 36, .28);
-    border-radius: 4px;
-    z-index: -1;
-}
-.au-brand__sub {
-    font-size: 1rem;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, .78);
-    margin: 0 0 40px;
-    max-width: 440px;
-}
-.au-feats {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 22px;
-}
-.au-feats li {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding-left: 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    text-align: center;
     opacity: 0;
     animation: au-rise .5s cubic-bezier(.16, 1, .3, 1) forwards;
     animation-delay: calc(300ms + var(--d));
 }
 @keyframes au-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-.au-feats li:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    right: -11px;
-    top: 6px;
-    bottom: 6px;
-    width: 1px;
-    background: rgba(255, 255, 255, .2);
+.au-carr li:not(:last-child)::after {
+    content: ''; position: absolute; right: -7px; top: 8px; bottom: 8px;
+    width: 1px; background: rgba(255, 255, 255, .2);
 }
-.au-feats__ic {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    border: 1.5px solid rgba(255, 255, 255, .35);
+.au-carr__ic {
+    width: 66px; height: 66px; border-radius: 50%;
+    display: grid; place-items: center;
+    border: 2px solid rgba(255, 255, 255, .85);
     background: rgba(255, 255, 255, .06);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: #fbbf24;
-    margin-bottom: 6px;
-    transition: transform .25s ease, background .25s ease;
+    font-size: 24px; color: #fff;
+    transition: transform .25s ease, background .25s ease, border-color .25s ease;
 }
-.au-feats li:hover .au-feats__ic { transform: translateY(-3px); background: rgba(255, 255, 255, .14); }
-.au-feats b { font-size: 13.5px; font-weight: 700; }
-.au-feats small { font-size: 11.5px; color: rgba(255, 255, 255, .62); line-height: 1.4; }
+.au-carr li:hover .au-carr__ic { transform: translateY(-3px); background: rgba(245, 179, 1, .18); border-color: #f5b301; }
+.au-carr b { font-size: 12.5px; font-weight: 600; line-height: 1.3; color: #fff; }
 
 /* ---------- Panel del formulario ---------- */
+.au-carr-movil { display: none; }
 .au-side {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 40px 28px;
 }
 .au-card {
     width: 100%;
-    max-width: 416px;
+    max-width: 520px;
     background: #fff;
     border: 1px solid #eef1f6;
     border-radius: 24px;
-    padding: 40px 38px 30px;
+    padding: 44px 48px 34px;
     box-shadow: 0 40px 90px -34px rgba(15, 23, 42, .3);
     text-align: center;
     animation: au-card-in .5s cubic-bezier(.16, 1, .3, 1);
 }
 @keyframes au-card-in { from { opacity: 0; transform: translateY(16px) scale(.99); } to { opacity: 1; transform: none; } }
-.au-card__logo { height: 46px; margin-bottom: 14px; }
+.au-card__logos {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    margin-bottom: 18px;
+}
+.au-card__logos img { height: 78px; max-width: 70%; object-fit: contain; }
+.au-card__logos-sep { width: 2px; align-self: stretch; margin: 4px 0; background: #f5b301; border-radius: 2px; }
 .au-card__title {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #1e3a8a;
+    color: #163964;
     margin: 0 0 4px;
     letter-spacing: -.01em;
 }
@@ -284,7 +301,6 @@ const features = [
 @media (max-width: 1100px) {
     .au-brand { padding-right: 96px; }
     .au-brand::after { right: -220px; }
-    .au-feats { gap: 16px; }
 }
 @media (max-width: 1024px) {
     .au { grid-template-columns: 1fr; }
@@ -292,15 +308,24 @@ const features = [
     .au-side {
         padding: 36px 18px;
         min-height: calc(100vh - 64px);
-        background: linear-gradient(158deg, #1e3a8a 0%, #1d4ed8 60%, #1e40af 100%);
+        background:
+            linear-gradient(180deg, rgba(10, 33, 92, .55), rgba(9, 30, 84, .92)),
+            url('/images/fondo-auth-issfam.jpg') center / cover no-repeat, #0b2a63;
     }
     .au-card { box-shadow: 0 30px 70px -20px rgba(15, 23, 42, .45); }
+    .au-carr-movil { display: block; width: 100%; max-width: 520px; margin-top: 26px; color: #fff; }
+    .au-carr-movil .au-carr__title { text-align: center; }
+}
+@media (max-width: 520px) {
+    .au-card { padding: 34px 22px 26px; }
+    .au-card__logos { gap: 10px; }
+    .au-card__logos img { height: 50px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .au *, .au *::before, .au *::after { animation: none !important; }
     .au-card :deep(.au-form) > *,
-    .au-feats li,
+    .au-carr li,
     .au-brand__inner { opacity: 1 !important; }
 }
 </style>
@@ -309,5 +334,5 @@ const features = [
 /* Ajustes globales para inputs/botones dentro de las pantallas de auth */
 .au .ant-input-affix-wrapper { border-radius: 12px; }
 .au .ant-btn { border-radius: 12px; font-weight: 600; }
-.au .ant-input-affix-wrapper > .ant-input-prefix { color: #1d4ed8; margin-inline-end: 8px; }
+.au .ant-input-affix-wrapper > .ant-input-prefix { color: #15509b; margin-inline-end: 8px; }
 </style>

@@ -66,8 +66,8 @@ async function submit() {
 </template>
 
 <style scoped>
-.au-link { color: #1d4ed8; font-weight: 600; }
-.au-link:hover { color: #1e3a8a; }
+.au-link { color: #15509b; font-weight: 600; }
+.au-link:hover { color: #163964; }
 .au-link--strong { display: inline-flex; align-items: center; gap: 5px; }
 .au-done { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 6px 0; }
 .au-done :deep(.anticon) { font-size: 42px; color: #16a34a; }

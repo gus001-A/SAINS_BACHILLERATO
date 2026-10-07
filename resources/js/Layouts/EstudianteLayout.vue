@@ -3,7 +3,7 @@ import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     HomeOutlined, FileTextOutlined, LaptopOutlined,
-    UserOutlined, LogoutOutlined, MenuOutlined, DownOutlined, CrownOutlined, BellOutlined,
+    UserOutlined, LogoutOutlined, MenuOutlined, DownOutlined, CrownOutlined, BellOutlined, BookOutlined,
 } from '@ant-design/icons-vue';
 import { antdTheme, antdLocale } from '@/theme';
 import { showFlash, confirmAction } from '@/lib/notify';
@@ -37,7 +37,8 @@ const initials = computed(() => {
 const ico = (c) => () => h(c);
 const nav = [
     { key: 'estudiante.dashboard', icon: ico(HomeOutlined), label: 'Inicio', route: 'estudiante.dashboard' },
-    { key: 'estudiante.clases-premium', icon: ico(CrownOutlined), label: 'Clases', route: 'estudiante.clases-premium' },
+    { key: 'estudiante.clases-premium', icon: ico(CrownOutlined), label: 'Mi carrera', route: 'estudiante.clases-premium' },
+    { key: 'estudiante.guias', icon: ico(BookOutlined), label: 'Guías', route: 'estudiante.guias' },
     { key: 'estudiante.examenes', icon: ico(FileTextOutlined), label: 'Mis exámenes', route: 'estudiante.examenes' },
     { key: 'estudiante.simulador', icon: ico(LaptopOutlined), label: 'Simulador', route: 'estudiante.simulador' },
 ];
@@ -88,7 +89,7 @@ onMounted(() => showFlash(page.props.flash));
                     <button class="stu-burger" @click="drawerOpen = true"><MenuOutlined /></button>
 
                     <Link :href="route('estudiante.dashboard')" class="stu-brand">
-                        <img src="/images/logo-sm.png" alt="SAINS" />
+                        <img src="/images/bachillerato-nacional-sm.png" alt="Bachillerato Nacional SAINS" />
                     </Link>
 
                     <nav class="stu-nav">
@@ -165,7 +166,7 @@ onMounted(() => showFlash(page.props.flash));
 
             <a-drawer v-model:open="drawerOpen" placement="left" :width="260" :body-style="{ padding: '8px 0' }">
                 <template #title>
-                    <img src="/images/logo-sm.png" alt="SAINS" style="height: 26px" />
+                    <img src="/images/bachillerato-nacional-sm.png" alt="Bachillerato Nacional SAINS" style="height: 30px" />
                 </template>
                 <a-menu mode="inline" :selected-keys="selectedKeys"
                     :items="nav.map((n) => ({ key: n.key, icon: n.icon, label: n.label }))" @click="go" />
@@ -192,7 +193,7 @@ onMounted(() => showFlash(page.props.flash));
 .stu-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5; }
 .stu-blob--1 {
     width: 520px; height: 520px; top: -220px; right: -160px;
-    background: radial-gradient(circle, rgba(99, 102, 241, .35), transparent 70%);
+    background: radial-gradient(circle, rgba(22, 100, 219, .35), transparent 70%);
     animation: sains-blob 20s ease-in-out infinite;
 }
 .stu-blob--2 {
@@ -207,7 +208,7 @@ onMounted(() => showFlash(page.props.flash));
     background: rgba(255, 255, 255, .82);
     backdrop-filter: saturate(180%) blur(16px);
     border-bottom: 1px solid rgba(226, 232, 240, .8);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .6) inset, 0 8px 24px -20px rgba(79, 70, 229, .5);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .6) inset, 0 8px 24px -20px rgba(24, 81, 173, .5);
     transition: box-shadow .25s ease, background .25s ease;
 }
 .stu-header.is-scrolled {
@@ -216,7 +217,7 @@ onMounted(() => showFlash(page.props.flash));
 }
 .stu-header::before {
     content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
-    background: linear-gradient(90deg, #4f46e5, #7c3aed 40%, #ec4899 75%, #f59e0b);
+    background: linear-gradient(90deg, #1851ad, #1550d0 40%, #ec4899 75%, #f59e0b);
     background-size: 300% 100%;
     animation: sains-shimmer 8s ease-in-out infinite;
 }
@@ -225,24 +226,24 @@ onMounted(() => showFlash(page.props.flash));
     display: flex; align-items: center; gap: 14px; padding: 0 22px;
 }
 .stu-brand { display: flex; align-items: center; flex: none; }
-.stu-brand img { height: 34px; display: block; transition: transform .2s ease; }
+.stu-brand img { height: 38px; display: block; transition: transform .2s ease; }
 .stu-brand:hover img { transform: scale(1.04); }
 
 .stu-nav { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; }
 .stu-nav__item {
     position: relative;
     display: inline-flex; align-items: center; gap: 7px;
-    padding: 8px 15px; border: 0; background: transparent; cursor: pointer;
+    padding: 8px 13px; border: 0; background: transparent; cursor: pointer; white-space: nowrap;
     font-size: 13.5px; font-weight: 550; color: #64748b; border-radius: 10px;
     transition: color .18s ease, background .18s ease, box-shadow .18s ease;
 }
 .stu-nav__item :deep(.anticon) { font-size: 15px; transition: transform .18s ease; }
-.stu-nav__item:hover { color: #4f46e5; background: rgba(79, 70, 229, .07); }
+.stu-nav__item:hover { color: #1851ad; background: rgba(24, 81, 173, .07); }
 .stu-nav__item:hover :deep(.anticon) { transform: translateY(-1px); }
 .stu-nav__item.is-active {
-    color: #4338ca; font-weight: 650;
-    background: linear-gradient(180deg, rgba(99, 102, 241, .12), rgba(99, 102, 241, .06));
-    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, .18);
+    color: #214784; font-weight: 650;
+    background: linear-gradient(180deg, rgba(22, 100, 219, .12), rgba(22, 100, 219, .06));
+    box-shadow: inset 0 0 0 1px rgba(22, 100, 219, .18);
 }
 .stu-nav__item.is-active::after {
     content: ''; position: absolute; left: 15px; right: 15px; bottom: -1px; height: 2.5px;
@@ -264,18 +265,18 @@ onMounted(() => showFlash(page.props.flash));
 
 .stu-user {
     display: flex; align-items: center; gap: 9px;
-    background: linear-gradient(135deg, #f6f7fb, #eef1fb); border: 1px solid #e8eaf6; border-radius: 999px;
+    background: linear-gradient(135deg, #f5f7fb, #edf2f8); border: 1px solid #e4ebf5; border-radius: 999px;
     padding: 4px 12px 4px 5px; cursor: pointer;
     transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-.stu-user:hover { border-color: #c7d2fe; box-shadow: 0 6px 16px -10px rgba(79, 70, 229, .5); transform: translateY(-1px); }
-.stu-user.is-open { border-color: #a5b4fc; box-shadow: 0 8px 20px -10px rgba(79, 70, 229, .55); }
+.stu-user:hover { border-color: #c5d5e9; box-shadow: 0 6px 16px -10px rgba(24, 81, 173, .5); transform: translateY(-1px); }
+.stu-user.is-open { border-color: #9cbae2; box-shadow: 0 8px 20px -10px rgba(24, 81, 173, .55); }
 .stu-user__caret { font-size: 10px; color: #94a3b8; transition: transform .2s ease; }
-.stu-user.is-open .stu-user__caret { transform: rotate(180deg); color: #6366f1; }
+.stu-user.is-open .stu-user__caret { transform: rotate(180deg); color: #1664db; }
 .stu-user__avatar {
     width: 30px; height: 30px; border-radius: 50%; flex: none;
     background: var(--sains-grad); color: #fff; font-size: 12px; font-weight: 700;
-    box-shadow: 0 4px 10px -4px rgba(79, 70, 229, .6);
+    box-shadow: 0 4px 10px -4px rgba(24, 81, 173, .6);
     display: flex; align-items: center; justify-content: center;
 }
 .stu-user__meta { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
@@ -287,7 +288,7 @@ onMounted(() => showFlash(page.props.flash));
 .stu-content { position: relative; z-index: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 28px 22px 44px; flex: 1; }
 .stu-footer { position: relative; z-index: 1; text-align: center; color: #94a3b8; font-size: 12.5px; padding: 8px 0 26px; }
 
-@media (max-width: 940px) {
+@media (max-width: 1150px) {
     .stu-nav { display: none; }
     .stu-burger { display: inline-flex; }
     .stu-user__meta { display: none; }

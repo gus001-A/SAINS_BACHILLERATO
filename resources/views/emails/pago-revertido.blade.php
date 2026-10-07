@@ -10,7 +10,7 @@
     <p style="margin:0 0 22px; font-size:15px; line-height:1.6; color:#475569;">
         Te informamos que el estado de tu pago cambió a
         <strong style="text-transform:capitalize;">{{ $nuevo_estado }}</strong>.
-        Si esto afecta tu acceso al Curso Premium, puedes regularizarlo en cualquier momento.
+        Si esto afecta tu acceso al Plan Premium del bachillerato, puedes regularizarlo en cualquier momento.
     </p>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; margin-bottom:26px;">

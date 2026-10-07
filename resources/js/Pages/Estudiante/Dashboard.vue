@@ -6,7 +6,7 @@ import {
     RocketOutlined, CrownOutlined, BarChartOutlined, FileTextOutlined,
     TrophyOutlined, ClockCircleOutlined, FileDoneOutlined, ArrowRightOutlined,
     PlayCircleFilled, ThunderboltFilled, UploadOutlined, SafetyCertificateOutlined,
-    DownloadOutlined, CheckCircleFilled,
+    DownloadOutlined, CheckCircleFilled, BookOutlined,
 } from '@ant-design/icons-vue';
 import EstudianteLayout from '@/Layouts/EstudianteLayout.vue';
 import StatCard from '@/Components/StatCard.vue';
@@ -18,6 +18,9 @@ const props = defineProps({
     documentos: { type: Object, default: () => ({ total_requeridos: 4, total_subidos: 0, total_aprobados: 0, total_pendientes: 0, total_rechazados: 0 }) },
     certificado: { type: Object, default: () => ({ generado: false, generado_en: null }) },
 });
+
+// Estudiantes registrados antes de ISSFAM: les faltan carrera / CURP / domicilio.
+const faltanDatosIssfam = computed(() => !!props.estudiante && (!props.estudiante.carrera_id || !props.estudiante.curp));
 
 const sinDocumentos = computed(() => (props.documentos?.total_subidos ?? 0) === 0);
 const porcentajeDocumentos = computed(() => {
@@ -61,14 +64,22 @@ onMounted(async () => {
 onBeforeUnmount(() => clearInterval(hb));
 
 const accesos = [
-    { title: 'Clases premium', desc: 'Videos y material por materia', icon: CrownOutlined, color: '#ec4899', route: 'estudiante.clases-premium' },
-    { title: 'Simulador', desc: 'Practica tipo EXANI-II', icon: RocketOutlined, color: '#4f46e5', route: 'estudiante.simulador' },
+    { title: 'Mi carrera', desc: 'Videos y material por materia', icon: CrownOutlined, color: '#ec4899', route: 'estudiante.clases-premium' },
+    { title: 'Guías', desc: 'Guías de estudio de tu carrera', icon: BookOutlined, color: '#d99a00', route: 'estudiante.guias' },
+    { title: 'Simulador', desc: 'Examen de prueba de 50, 150 o 250', icon: RocketOutlined, color: '#1851ad', route: 'estudiante.simulador' },
     { title: 'Mis exámenes', desc: 'Historial y resultados', icon: FileTextOutlined, color: '#0ea5e9', route: 'estudiante.examenes' },
 ];
 </script>
 
 <template>
     <EstudianteLayout title="Panel del estudiante">
+        <a-alert v-if="faltanDatosIssfam" type="warning" show-icon class="faltan-datos"
+            message="Completa tu carrera, CURP y domicilio"
+            description="Los necesitamos para tu inscripción y para mostrarte las guías de tu carrera.">
+            <template #action>
+                <a-button type="primary" size="small" @click="router.visit(route('estudiante.perfil'))">Completar ahora</a-button>
+            </template>
+        </a-alert>
         <section class="sains-hero">
             <div class="sains-hero__grid">
                 <div>
@@ -78,7 +89,7 @@ const accesos = [
                     <h1 class="sains-hero__title">Hola, {{ nombre }}</h1>
                     <p class="sains-hero__sub">
                         {{ planActivo
-                            ? 'Continúa donde lo dejaste y sigue sumando puntos para tu universidad.'
+                            ? 'Continúa donde lo dejaste y sigue avanzando hacia tu certificado de bachillerato.'
                             : 'Desbloquea todas las clases y simuladores ilimitados con el Plan Premium.' }}
                     </p>
                     <div class="hero-cta">
@@ -166,7 +177,7 @@ const accesos = [
                             <a-progress
                                 :percent="porcentajeDocumentos"
                                 :status="porcentajeDocumentos >= 100 ? 'success' : 'active'"
-                                :stroke-color="{ from: '#6366f1', to: '#ec4899' }"
+                                :stroke-color="{ from: '#1664db', to: '#ec4899' }"
                             />
                             <a-typography-text type="secondary" v-if="!sinDocumentos">
                                 <template v-if="documentos.total_pendientes">{{ documentos.total_pendientes }} en revisión</template>
@@ -209,11 +220,13 @@ const accesos = [
 .hero-cta { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
 .hero-cta :deep(.ant-btn-background-ghost) { border-color: rgba(255,255,255,.6); color: #fff; }
 .hero-cta :deep(.ant-btn-background-ghost:hover) { border-color: #fff; color: #fff; background: rgba(255,255,255,.12); }
-.hero-cta__up { background: #fff !important; border-color: #fff !important; color: #4f46e5 !important; font-weight: 650; }
-.hero-cta__up:hover { background: #f1f0ff !important; }
+.hero-cta__up { background: #fff !important; border-color: #fff !important; color: #1851ad !important; font-weight: 650; }
+.hero-cta__up:hover { background: #eef2f8 !important; }
 
-.quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 4px 0 18px; }
-@media (max-width: 860px) { .quick { grid-template-columns: 1fr; } }
+.faltan-datos { margin-bottom: 16px; border-radius: 12px; }
+.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 4px 0 18px; }
+@media (max-width: 1100px) { .quick { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .quick { grid-template-columns: 1fr; } }
 .quick-card {
     display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;
     background: #fff; border: 1px solid var(--sains-line); border-radius: var(--sains-radius);
@@ -228,7 +241,7 @@ const accesos = [
 .quick-card__body b { font-size: 14.5px; color: #0f172a; }
 .quick-card__body small { color: #64748b; }
 .quick-card__arrow { color: #cbd5e1; transition: transform .18s ease, color .18s ease; }
-.quick-card:hover .quick-card__arrow { color: #4f46e5; transform: translateX(3px); }
+.quick-card:hover .quick-card__arrow { color: #1851ad; transform: translateX(3px); }
 
 .exam-dot {
     width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;

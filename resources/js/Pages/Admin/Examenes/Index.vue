@@ -54,6 +54,7 @@ const tipoColor = (t) => {
     if (s.includes('simul')) return 'green';
     if (s.includes('materia')) return 'purple';
     if (s.includes('curso') || s.includes('general')) return 'geekblue';
+    if (s.includes('certific')) return 'gold';
     return 'default';
 };
 

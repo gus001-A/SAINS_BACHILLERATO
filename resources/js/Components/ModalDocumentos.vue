@@ -120,7 +120,7 @@ function descargar() {
 :deep(.pdf-modal .ant-modal-header) {
     padding: 22px 68px 22px 26px;
     margin: 0;
-    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    background: linear-gradient(135deg, #f8fafc, #eef3f9);
     border-bottom: 1px solid #e2e8f0;
 }
 
@@ -231,27 +231,27 @@ function descargar() {
 
 .pdf-actions__link {
     font-size: 13.5px;
-    color: #1d4ed8;
+    color: #15509b;
     font-weight: 600;
     text-decoration: none;
     transition: color .2s ease;
 }
 
 .pdf-actions__link:hover {
-    color: #1e3a8a;
+    color: #163964;
     text-decoration: underline;
 }
 
 .pdf-actions__download {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    background: linear-gradient(135deg, #1851ad, #1550d0) !important;
     border-color: transparent !important;
     font-weight: 650;
-    box-shadow: 0 14px 28px -12px rgba(79, 70, 229, .75);
+    box-shadow: 0 14px 28px -12px rgba(24, 81, 173, .75);
 }
 
 .pdf-actions__download:hover {
     filter: brightness(1.05);
-    box-shadow: 0 18px 36px -12px rgba(79, 70, 229, .9);
+    box-shadow: 0 18px 36px -12px rgba(24, 81, 173, .9);
 }
 
 /* ================= X de cerrar: grande + animación al hover ================= */

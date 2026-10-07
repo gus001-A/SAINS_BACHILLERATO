@@ -9,7 +9,7 @@ class ExamenGenerado extends Model
 {
     use HasFactory;
 
-    protected $table = 'Examen_generado';
+    protected $table = 'examen_generado';
     protected $primaryKey = 'id';
     
     public $timestamps = true;

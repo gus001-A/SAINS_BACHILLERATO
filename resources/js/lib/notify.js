@@ -32,7 +32,7 @@ function baseConfirm({ title, content = '', okText = 'Confirmar', danger = false
     const tones = {
         delete: { icon: DeleteOutlined, color: '#dc2626', bg: '#fee2e2' },
         warn: { icon: ExclamationCircleFilled, color: '#d97706', bg: '#fef3c7' },
-        ask: { icon: QuestionCircleFilled, color: '#4f46e5', bg: '#eef2ff' },
+        ask: { icon: QuestionCircleFilled, color: '#1851ad', bg: '#eef3f9' },
         logout: { icon: LogoutOutlined, color: '#dc2626', bg: '#fee2e2' },
     };
     const t = tones[tone] ?? tones.ask;

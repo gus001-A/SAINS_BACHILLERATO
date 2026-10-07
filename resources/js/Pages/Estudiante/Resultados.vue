@@ -162,7 +162,7 @@ function reintentar() {
 .timeline-fill { width: 26px; border-radius: 8px 8px 0 0; transition: height .3s ease; }
 .timeline-score { font-size: 12px; font-weight: 700; margin-top: 6px; }
 .timeline-label { font-size: 11px; color: #94a3b8; }
-.timeline-bar.current .timeline-label { color: #4f46e5; font-weight: 700; }
+.timeline-bar.current .timeline-label { color: #1851ad; font-weight: 700; }
 
 .q-head { display: flex; gap: 8px; align-items: flex-start; }
 .q-head-text { flex: 1; }

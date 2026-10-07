@@ -1,9 +1,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
+import axios from 'axios';
 import {
     PlusOutlined, SearchOutlined, QuestionCircleOutlined, CheckCircleFilled, MinusCircleOutlined,
     DownloadOutlined, UploadOutlined, InboxOutlined, FileExcelOutlined, DeleteOutlined, PlusCircleOutlined,
+    FileAddOutlined, ArrowLeftOutlined, CheckOutlined,
 } from '@ant-design/icons-vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import PageHead from '@/Components/PageHead.vue';
@@ -14,6 +16,7 @@ import { confirmDelete, message } from '@/lib/notify';
 const props = defineProps({
     preguntas: { type: Object, required: true },
     areas: { type: Array, default: () => [] },
+    examenes: { type: Array, default: () => [] },
     stats: { type: Object, required: true },
     filters: { type: Object, default: () => ({}) },
 });
@@ -97,27 +100,77 @@ function eliminar(r) {
     confirmDelete({ title: '¿Eliminar pregunta?', content: r.pregunta.slice(0, 80), onOk: () => router.delete(route('admin.preguntas.destroy', r.id), { preserveScroll: true }) });
 }
 
-/* ---------- Importar desde Excel / CSV ---------- */
+/* ---------- Importar desde Excel / CSV (2 pasos: vista previa → confirmar) ---------- */
 const importOpen = ref(false);
-const importForm = useForm({ archivo: null });
+const paso = ref(0); // 0 = subir, 1 = revisar
+const archivo = ref(null);
+const analizando = ref(false);
+const analisis = ref(null);
+const filtroImport = ref('todas');
+const importForm = useForm({ token: '', omitir_duplicadas: true, examen_id: undefined });
 
 function beforeUploadArchivo(file) {
     const okType = /\.(xlsx|xls|csv)$/i.test(file.name);
     if (!okType) { message.error('Solo se aceptan archivos .xlsx, .xls o .csv.'); return false; }
-    importForm.archivo = file;
+    if (file.size > 10 * 1024 * 1024) { message.error('El archivo no puede pesar más de 10 MB.'); return false; }
+    archivo.value = file;
+    analizar();
     return false;
 }
-function quitarArchivo() {
-    importForm.archivo = null;
+async function analizar() {
+    analizando.value = true;
+    const fd = new FormData();
+    fd.append('archivo', archivo.value);
+    try {
+        const { data } = await axios.post(route('admin.preguntas.importar.analizar'), fd);
+        analisis.value = data;
+        importForm.token = data.token;
+        filtroImport.value = data.resumen.error ? 'error' : 'todas';
+        paso.value = 1;
+    } catch (e) {
+        message.error(e.response?.data?.message || e.response?.data?.errors?.archivo?.[0] || 'No se pudo leer el archivo.');
+        archivo.value = null;
+    } finally {
+        analizando.value = false;
+    }
 }
+const aGuardar = computed(() => {
+    const r = analisis.value?.resumen;
+    if (!r) return 0;
+    return r.nueva + r.actualiza + (importForm.omitir_duplicadas ? 0 : r.duplicada);
+});
+const filasFiltradas = computed(() => {
+    const filas = analisis.value?.filas ?? [];
+    return filtroImport.value === 'todas' ? filas : filas.filter((f) => f.estado === filtroImport.value);
+});
+const ESTADOS_IMPORT = {
+    nueva: { color: 'green', label: 'Nueva' },
+    actualiza: { color: 'blue', label: 'Actualiza' },
+    duplicada: { color: 'gold', label: 'Duplicada' },
+    error: { color: 'red', label: 'Error' },
+};
+const colsImport = [
+    { title: 'Fila', dataIndex: 'fila', key: 'fila', width: 64, align: 'center' },
+    { title: 'Estado', key: 'estado', width: 110 },
+    { title: 'Pregunta', key: 'pregunta', ellipsis: true },
+    { title: 'Área', key: 'area', width: 150, ellipsis: true },
+    { title: 'Correcta', key: 'correcta', width: 170, ellipsis: true },
+];
 function enviarImportacion() {
-    if (!importForm.archivo) { message.warning('Selecciona un archivo primero.'); return; }
-    importForm.post(route('admin.preguntas.importar'), {
-        forceFormData: true,
-        onSuccess: () => { importOpen.value = false; importForm.reset(); },
-    });
+    if (!aGuardar.value) { message.warning('No hay filas para importar.'); return; }
+    importForm.transform((d) => ({ ...d, omitir_duplicadas: d.omitir_duplicadas ? 1 : 0 }))
+        .post(route('admin.preguntas.importar'), {
+            preserveScroll: true,
+            onSuccess: () => { importOpen.value = false; },
+        });
+}
+function volverASubir() {
+    paso.value = 0;
+    archivo.value = null;
+    analisis.value = null;
 }
 function alCerrarImport() {
+    volverASubir();
     importForm.reset();
     importForm.clearErrors();
 }
@@ -151,7 +204,8 @@ const columns = [
                 <a-button :href="route('admin.preguntas.exportar-csv')">
                     <template #icon><DownloadOutlined /></template>Descargar CSV
                 </a-button>
-                <a-button @click="importOpen = true"><template #icon><UploadOutlined /></template>Cargar archivo</a-button>
+                <a-button :href="route('admin.preguntas.plantilla')"><template #icon><FileAddOutlined /></template>Descargar plantilla</a-button>
+                <a-button @click="importOpen = true"><template #icon><UploadOutlined /></template>Importar preguntas</a-button>
                 <a-button type="primary" @click="openCreate"><template #icon><PlusOutlined /></template>Nueva pregunta</a-button>
             </template>
         </PageHead>
@@ -241,38 +295,98 @@ const columns = [
             v-model:open="importOpen"
             title="Cargar preguntas desde Excel o CSV"
             class="sains-modal"
-            :width="540"
-            :confirm-loading="importForm.processing"
-            ok-text="Importar"
-            cancel-text="Cancelar"
-            :ok-button-props="{ disabled: !importForm.archivo }"
-            @ok="enviarImportacion"
-            @cancel="alCerrarImport"
+            :width="paso === 1 ? 980 : 600"
+            :footer="null"
+            destroy-on-close
             @after-close="alCerrarImport"
         >
-            <a-form layout="vertical">
-                <a-form-item label="Archivo" :validate-status="importForm.errors.archivo ? 'error' : undefined" :help="importForm.errors.archivo">
-                    <a-upload-dragger
-                        v-if="!importForm.archivo"
-                        :before-upload="beforeUploadArchivo"
-                        :max-count="1"
-                        :show-upload-list="false"
-                        accept=".xlsx,.xls,.csv"
-                    >
+            <a-steps :current="paso" size="small" class="imp-steps" :items="[{ title: 'Subir archivo' }, { title: 'Revisar' }, { title: 'Importar' }]" />
+
+            <!-- Paso 1: subir -->
+            <template v-if="paso === 0">
+                <a-spin :spinning="analizando" tip="Leyendo y revisando el archivo…">
+                    <a-upload-dragger :before-upload="beforeUploadArchivo" :max-count="1" :show-upload-list="false" accept=".xlsx,.xls,.csv">
                         <p class="ant-upload-drag-icon"><InboxOutlined /></p>
                         <p class="ant-upload-text">Haz clic o arrastra tu archivo aquí</p>
-                        <p class="ant-upload-hint">.xlsx, .xls o .csv</p>
+                        <p class="ant-upload-hint">.xlsx, .xls o .csv · máx. 10 MB. Nada se guarda hasta que confirmes.</p>
                     </a-upload-dragger>
-
-                    <div v-else class="import-file">
-                        <span class="import-file__name"><FileExcelOutlined /> {{ importForm.archivo.name }}</span>
-                        <a-button size="small" type="text" danger @click="quitarArchivo">
-                            <template #icon><DeleteOutlined /></template>Quitar
-                        </a-button>
+                </a-spin>
+                <div class="imp-tpl">
+                    <div>
+                        <b>¿Primera vez?</b>
+                        <span>Descarga la plantilla: trae una pregunta de ejemplo y una hoja de instrucciones.</span>
                     </div>
-                </a-form-item>
-                <a-alert type="info" show-icon message="Usa las mismas columnas que la descarga: ID, Área, Pregunta, Opción A, Opción B, Opción C, Opción D, Respuesta Correcta (A-D), Justificación. La Opción D puede ir vacía (mínimo 3 opciones). Deja el ID vacío para crear preguntas nuevas; si coincide con una existente, la actualiza (reemplazando sus opciones). Si el área no existe, se crea automáticamente." />
-            </a-form>
+                    <a-button :href="route('admin.preguntas.plantilla')"><template #icon><FileAddOutlined /></template>Descargar plantilla</a-button>
+                </div>
+                <ul class="imp-rules">
+                    <li>Las columnas se reconocen por su encabezado (Área, Pregunta, Opción A…E, Respuesta correcta, Justificación), en cualquier orden.</li>
+                    <li>La respuesta correcta puede ser la letra, el número de la opción o su texto.</li>
+                    <li>Con ID se actualiza la pregunta existente; sin ID se crea una nueva. Las áreas que no existan se crean solas.</li>
+                </ul>
+            </template>
+
+            <!-- Paso 2: revisar -->
+            <template v-else-if="analisis">
+                <div class="imp-file">
+                    <span><FileExcelOutlined /> {{ analisis.nombre }} · {{ analisis.resumen.total }} filas</span>
+                    <a-button size="small" type="link" @click="volverASubir"><template #icon><ArrowLeftOutlined /></template>Cambiar archivo</a-button>
+                </div>
+
+                <div class="imp-cards">
+                    <button v-for="(cfg, k) in { todas: { label: 'Todas' }, ...ESTADOS_IMPORT }" :key="k" type="button"
+                        class="imp-card" :class="[`is-${k}`, { on: filtroImport === k }]" @click="filtroImport = k">
+                        <b>{{ k === 'todas' ? analisis.resumen.total : analisis.resumen[k] }}</b>
+                        <span>{{ cfg.label }}</span>
+                    </button>
+                </div>
+
+                <a-table :columns="colsImport" :data-source="filasFiltradas" row-key="fila" size="small"
+                    :pagination="{ pageSize: 8, size: 'small', showSizeChanger: false }" class="imp-table">
+                    <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'estado'">
+                            <a-tag :color="ESTADOS_IMPORT[record.estado].color" :bordered="false">{{ ESTADOS_IMPORT[record.estado].label }}</a-tag>
+                        </template>
+                        <template v-else-if="column.key === 'pregunta'">
+                            <div class="imp-q">{{ record.pregunta || '—' }}</div>
+                            <div v-if="record.motivo" class="imp-why" :class="`is-${record.estado}`">{{ record.motivo }}</div>
+                        </template>
+                        <template v-else-if="column.key === 'area'">
+                            {{ record.area || '—' }} <a-tag v-if="record.area_nueva" color="purple" :bordered="false">nueva</a-tag>
+                        </template>
+                        <template v-else-if="column.key === 'correcta'">
+                            <span v-if="record.letra"><b>{{ record.letra }})</b> {{ record.correcta }}</span>
+                            <span v-else>—</span>
+                        </template>
+                    </template>
+                </a-table>
+                <p v-if="analisis.resumen.total > analisis.filas.length" class="imp-note">
+                    La vista previa muestra las primeras {{ analisis.filas.length }} filas; se importarán todas.
+                </p>
+
+                <div class="imp-opts">
+                    <a-checkbox v-model:checked="importForm.omitir_duplicadas" :disabled="!analisis.resumen.duplicada">
+                        Omitir las {{ analisis.resumen.duplicada }} duplicadas
+                    </a-checkbox>
+                    <div class="imp-opts__exam">
+                        <span>Agregarlas también a un examen (opcional)</span>
+                        <a-select v-model:value="importForm.examen_id" allow-clear show-search option-filter-prop="label"
+                            placeholder="Sin agregar a examen" :options="examenes" style="width: 300px" />
+                    </div>
+                </div>
+
+                <div class="imp-actions">
+                    <span v-if="analisis.resumen.error" class="imp-actions__warn">
+                        Las {{ analisis.resumen.error }} filas con error no se importarán. Corrígelas en el archivo y vuelve a subirlo si las necesitas.
+                    </span>
+                    <span v-else></span>
+                    <a-space>
+                        <a-button @click="importOpen = false">Cancelar</a-button>
+                        <a-button type="primary" :loading="importForm.processing" :disabled="!aGuardar" @click="enviarImportacion">
+                            <template #icon><CheckOutlined /></template>Importar {{ aGuardar }} pregunta(s)
+                        </a-button>
+                    </a-space>
+                </div>
+            </template>
         </a-modal>
     </AdminLayout>
 </template>
@@ -299,4 +413,42 @@ const columns = [
 .opcion-row__radio { flex: none; }
 .opcion-row .ant-input { flex: 1; }
 .opcion-add { margin-top: 2px; }
+
+/* ---------- Importación ---------- */
+.imp-steps { margin: 4px 0 18px; }
+.imp-tpl {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #eef3f9; border: 1px solid #c5d5e9;
+}
+.imp-tpl b { display: block; font-size: 13px; color: #0f172a; }
+.imp-tpl span { font-size: 12.5px; color: #475569; }
+.imp-rules { margin: 12px 0 0; padding-left: 18px; font-size: 12.5px; color: #64748b; line-height: 1.6; }
+.imp-file { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #334155; }
+.imp-file .anticon { color: #16a34a; }
+.imp-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+.imp-card {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    padding: 10px 12px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #fff; cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.imp-card b { font-size: 20px; line-height: 1.1; color: #0f172a; }
+.imp-card span { font-size: 12px; color: #64748b; font-weight: 600; }
+.imp-card.on { border-color: var(--sains-primary); box-shadow: 0 0 0 3px rgba(24, 81, 173, .12); }
+.imp-card.is-nueva b { color: #16a34a; }
+.imp-card.is-actualiza b { color: #1851ad; }
+.imp-card.is-duplicada b { color: #d99a00; }
+.imp-card.is-error b { color: #dc2626; }
+.imp-q { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.imp-why { font-size: 11.5px; margin-top: 2px; white-space: normal; }
+.imp-why.is-error { color: #dc2626; }
+.imp-why.is-duplicada { color: #b45309; }
+.imp-note { font-size: 12px; color: #64748b; margin: 6px 0 0; }
+.imp-opts {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0;
+}
+.imp-opts__exam { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; }
+.imp-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; }
+.imp-actions__warn { font-size: 12.5px; color: #b45309; }
+@media (max-width: 760px) { .imp-cards { grid-template-columns: repeat(3, 1fr); } }
 </style>

@@ -258,7 +258,7 @@ const columns = [
     width: 34px; height: 34px; border-radius: 10px; flex: none;
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 13px; color: #fff;
-    background: linear-gradient(135deg, #6366f1, #a855f7);
+    background: linear-gradient(135deg, #1664db, #3469eb);
 }
 
 .cc-timeline { display: flex; flex-direction: column; gap: 10px; padding: 6px 4px; }
@@ -272,7 +272,7 @@ const columns = [
     background: #94a3b8;
 }
 .cc-item__icon.is-pendiente { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-.cc-item__icon.is-en_proceso { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.cc-item__icon.is-en_proceso { background: linear-gradient(135deg, #7ba5d9, #1774e6); }
 .cc-item__icon.is-finalizado { background: linear-gradient(135deg, #34d399, #10b981); }
 .cc-item__body { flex: 1; min-width: 0; }
 .cc-item__head { display: flex; align-items: center; gap: 8px; }
@@ -285,6 +285,6 @@ const columns = [
     width: 28px; height: 28px; border: 0; background: #f4f6fb; border-radius: 8px; cursor: pointer;
     color: #64748b; font-size: 12px; transition: all .14s ease;
 }
-.cc-mini.is-edit:hover { background: #eef2ff; color: #4f46e5; }
+.cc-mini.is-edit:hover { background: #eef3f9; color: #1851ad; }
 .cc-mini.is-del:hover { background: #fee2e2; color: #dc2626; }
 </style>

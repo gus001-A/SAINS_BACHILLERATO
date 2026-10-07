@@ -5,7 +5,7 @@ import {
     UserOutlined, BellOutlined, LogoutOutlined, MenuOutlined,
     TeamOutlined, SolutionOutlined, DollarOutlined, PhoneOutlined,
     SafetyOutlined, DatabaseOutlined, DownOutlined,
-    HomeOutlined,
+    HomeOutlined, ApartmentOutlined,
 } from '@ant-design/icons-vue';
 import { antdTheme, antdLocale } from '@/theme';
 import { showFlash, confirmAction } from '@/lib/notify';
@@ -38,6 +38,13 @@ const ico = (comp) => () => h(comp);
 const nav = [
     { key: 'admin.dashboard', icon: ico(HomeOutlined), label: 'Inicio', route: 'admin.dashboard' },
     { key: 'admin.estudiantes', icon: ico(TeamOutlined), label: 'Estudiantes', route: 'admin.estudiantes.index' },
+    {
+        key: 'bachillerato', icon: ico(ApartmentOutlined), label: 'Carreras',
+        children: [
+            { key: 'admin.carreras', label: 'Carreras', route: 'admin.carreras.index' },
+            { key: 'admin.guias', label: 'Guías', route: 'admin.guias.index' },
+        ],
+    },
     {
         key: 'evaluacion', icon: ico(SolutionOutlined), label: 'Evaluación',
         children: [
@@ -140,7 +147,7 @@ onMounted(() => showFlash(page.props.flash));
                     <button class="adm-burger" @click="drawerOpen = true"><MenuOutlined /></button>
 
                     <Link :href="route('admin.dashboard')" class="adm-brand">
-                        <img src="/images/logo-sm.png" alt="SAINS" />
+                        <img src="/images/bachillerato-nacional-sm.png" alt="Bachillerato Nacional SAINS" />
                     </Link>
 
                     <nav class="adm-nav">
@@ -210,7 +217,7 @@ onMounted(() => showFlash(page.props.flash));
 
             <a-drawer v-model:open="drawerOpen" placement="left" :width="272" :body-style="{ padding: '8px 0' }">
                 <template #title>
-                    <img src="/images/logo-sm.png" alt="SAINS" style="height: 26px" />
+                    <img src="/images/bachillerato-nacional-sm.png" alt="Bachillerato Nacional SAINS" style="height: 30px" />
                 </template>
                 <a-menu
                     mode="inline"
@@ -242,12 +249,12 @@ onMounted(() => showFlash(page.props.flash));
 .adm-blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: .45; }
 .adm-blob--1 {
     width: 560px; height: 560px; top: -240px; right: -180px;
-    background: radial-gradient(circle, rgba(99, 102, 241, .32), transparent 70%);
+    background: radial-gradient(circle, rgba(22, 100, 219, .32), transparent 70%);
     animation: sains-blob 22s ease-in-out infinite;
 }
 .adm-blob--2 {
     width: 480px; height: 480px; bottom: -220px; left: -160px;
-    background: radial-gradient(circle, rgba(124, 58, 237, .18), transparent 70%);
+    background: radial-gradient(circle, rgba(21, 80, 208, .18), transparent 70%);
     animation: sains-blob 28s ease-in-out infinite reverse;
 }
 
@@ -257,7 +264,7 @@ onMounted(() => showFlash(page.props.flash));
     background: rgba(255, 255, 255, .82);
     backdrop-filter: saturate(180%) blur(16px);
     border-bottom: 1px solid rgba(226, 232, 240, .8);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .6) inset, 0 8px 24px -20px rgba(79, 70, 229, .5);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .6) inset, 0 8px 24px -20px rgba(24, 81, 173, .5);
     transition: box-shadow .25s ease, background .25s ease;
 }
 .adm-header.is-scrolled {
@@ -266,7 +273,7 @@ onMounted(() => showFlash(page.props.flash));
 }
 .adm-header::before {
     content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
-    background: linear-gradient(90deg, #4f46e5, #7c3aed 40%, #ec4899 75%, #f59e0b);
+    background: linear-gradient(90deg, #1851ad, #1550d0 40%, #ec4899 75%, #f59e0b);
     background-size: 300% 100%;
     animation: sains-shimmer 8s ease-in-out infinite;
 }
@@ -275,7 +282,7 @@ onMounted(() => showFlash(page.props.flash));
     display: flex; align-items: center; gap: 14px; padding: 0 22px;
 }
 .adm-brand { display: flex; align-items: center; flex: none; }
-.adm-brand img { height: 30px; display: block; transition: transform .2s ease; }
+.adm-brand img { height: 36px; display: block; transition: transform .2s ease; }
 .adm-brand:hover img { transform: scale(1.04); }
 
 .adm-nav {
@@ -297,12 +304,12 @@ onMounted(() => showFlash(page.props.flash));
 }
 .adm-nav__item :deep(.anticon) { font-size: 14px; opacity: .85; transition: transform .16s ease; }
 .adm-nav__caret { font-size: 9px !important; opacity: .55; }
-.adm-nav__item:hover { color: #4338ca; background: #eef2ff; }
+.adm-nav__item:hover { color: #214784; background: #eef3f9; }
 .adm-nav__item:hover :deep(.anticon:not(.adm-nav__caret)) { transform: translateY(-1px); opacity: 1; }
 .adm-nav__item.is-active {
     color: #ffffff; font-weight: 650;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    box-shadow: 0 8px 18px -8px rgba(79, 70, 229, .55);
+    background: linear-gradient(135deg, #1664db, #1851ad);
+    box-shadow: 0 8px 18px -8px rgba(24, 81, 173, .55);
 }
 .adm-nav__item.is-active :deep(.anticon) { opacity: 1; }
 @keyframes sains-nav-underline { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
@@ -326,22 +333,22 @@ onMounted(() => showFlash(page.props.flash));
     display: flex; align-items: center; justify-content: center;
     transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
-.adm-icon-btn:hover { background: #eef1fe; border-color: #e0e3f5; color: #4f46e5; }
+.adm-icon-btn:hover { background: #edf2f8; border-color: #dbe5f1; color: #1851ad; }
 
 .adm-user {
     display: flex; align-items: center; gap: 9px;
-    background: linear-gradient(135deg, #f6f7fb, #eef1fb); border: 1px solid #e8eaf6; border-radius: 999px;
+    background: linear-gradient(135deg, #f5f7fb, #edf2f8); border: 1px solid #e4ebf5; border-radius: 999px;
     padding: 4px 12px 4px 5px; cursor: pointer;
     transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-.adm-user:hover { border-color: #c7d2fe; box-shadow: 0 6px 16px -10px rgba(79, 70, 229, .5); transform: translateY(-1px); }
-.adm-user.is-open { border-color: #a5b4fc; box-shadow: 0 8px 20px -10px rgba(79, 70, 229, .55); }
+.adm-user:hover { border-color: #c5d5e9; box-shadow: 0 6px 16px -10px rgba(24, 81, 173, .5); transform: translateY(-1px); }
+.adm-user.is-open { border-color: #9cbae2; box-shadow: 0 8px 20px -10px rgba(24, 81, 173, .55); }
 .adm-user__caret { font-size: 10px; color: #94a3b8; transition: transform .2s ease; }
-.adm-user.is-open .adm-user__caret { transform: rotate(180deg); color: #6366f1; }
+.adm-user.is-open .adm-user__caret { transform: rotate(180deg); color: #1664db; }
 .adm-user__avatar {
     width: 30px; height: 30px; border-radius: 50%; flex: none;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; font-size: 12px; font-weight: 700;
-    box-shadow: 0 4px 10px -4px rgba(79, 70, 229, .6);
+    background: linear-gradient(135deg, #1851ad, #1550d0); color: #fff; font-size: 12px; font-weight: 700;
+    box-shadow: 0 4px 10px -4px rgba(24, 81, 173, .6);
     display: flex; align-items: center; justify-content: center;
 }
 .adm-user__meta { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
@@ -370,13 +377,13 @@ onMounted(() => showFlash(page.props.flash));
     display: flex; gap: 10px; padding: 11px 14px; border-bottom: 1px solid #f4f6fa;
     color: #0f172a; text-decoration: none;
 }
-.notif-item:hover { background: #f7f8fc; }
+.notif-item:hover { background: #f6f8fc; }
 .notif-dot { width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; margin-top: 6px; flex: none; }
 .notif-msg { display: block; font-size: 12.5px; font-weight: 550; }
 .notif-date { display: block; font-size: 11px; color: #94a3b8; margin-top: 1px; }
 .notif-foot {
     display: block; text-align: center; padding: 11px; font-size: 12.5px; font-weight: 600;
-    color: #4f46e5; border-top: 1px solid #eef1f6; text-decoration: none;
+    color: #1851ad; border-top: 1px solid #eef1f6; text-decoration: none;
 }
 
 @media (max-width: 1040px) {
@@ -406,7 +413,7 @@ onMounted(() => showFlash(page.props.flash));
     transition: background .14s ease, color .14s ease;
 }
 .adm-submenu .ant-dropdown-menu-item:hover {
-    background: #eef2ff !important;
-    color: #4338ca !important;
+    background: #eef3f9 !important;
+    color: #214784 !important;
 }
 </style>

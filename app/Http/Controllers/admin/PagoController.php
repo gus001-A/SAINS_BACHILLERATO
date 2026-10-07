@@ -93,7 +93,7 @@ class PagoController extends Controller
                 ? optional($p->fecha_pago)->format('H:i')
                 : optional($p->created_at)->format('H:i'),
             'tiene_comprobante' => !empty($p->comprobante),
-            'comprobante_url' => $p->comprobante ? Storage::url($p->comprobante) : null,
+            'comprobante_url' => $p->comprobante ? \App\Support\ArchivoUrl::comprobante($p) : null,
             'comprobante_es_pdf' => $p->comprobante ? str_ends_with(strtolower($p->comprobante), '.pdf') : false,
             'revisor' => $p->revisor?->administrador
                 ? trim("{$p->revisor->administrador->nombre} {$p->revisor->administrador->apellido_paterno}")
@@ -232,9 +232,10 @@ class PagoController extends Controller
                 'fecha_pago' => optional($pago->fecha_pago)->format('Y-m-d H:i'),
                 'fecha_aprueba' => optional($pago->fecha_aprueba)->format('Y-m-d H:i'),
                 'nota_usuario' => $pago->nota_usuario,
-                'comprobante_url' => $pago->comprobante ? Storage::url($pago->comprobante) : null,
+                'comprobante_url' => $pago->comprobante ? \App\Support\ArchivoUrl::comprobante($pago) : null,
                 'alumno' => $pago->alumno ? [
                     'id' => $pago->alumno->id,
+                    'usuario_id' => $pago->alumno->getRelation('usuario')?->id,
                     'nombre' => trim("{$pago->alumno->nombre} {$pago->alumno->paterno} {$pago->alumno->materno}"),
                     'correo' => optional($pago->alumno->getRelation('usuario'))->correo,
                     'plan_activo' => (bool) $pago->alumno->plan_activo,
@@ -260,7 +261,7 @@ class PagoController extends Controller
                 'referencia_pago' => $pago->referencia_pago,
                 'estatus' => $pago->estatus,
                 'nota_usuario' => $pago->nota_usuario,
-                'comprobante_url' => $pago->comprobante ? Storage::url($pago->comprobante) : null,
+                'comprobante_url' => $pago->comprobante ? \App\Support\ArchivoUrl::comprobante($pago) : null,
             ],
             'estudiantes' => $this->estudiantesParaSelect(),
         ]);
@@ -446,8 +447,8 @@ class PagoController extends Controller
             // Enviar usando Mail::html() - Esto EVITA el encabezado "Laravel"
             Mail::html($htmlContent, function($message) use ($correoEstudiante, $nombreCompleto) {
                 $message->to($correoEstudiante, $nombreCompleto)
-                        ->subject('🎉 ¡Tu pago ha sido aprobado! | SAINS Educación')
-                        ->from(config('mail.from.address', 'sains.ingreso@gmail.com'), 'SAINS Educación');
+                        ->subject('🎉 ¡Tu pago ha sido aprobado! | SAINS Bachillerato')
+                        ->from(config('mail.from.address', 'sains.bachillerato@gmail.com'), 'SAINS Bachillerato · ISSFAM');
             });
             
             Log::info('📧 Correo de aprobación ENVIADO a: ' . $correoEstudiante);
@@ -508,8 +509,8 @@ class PagoController extends Controller
             // Enviar usando Mail::html() - Esto EVITA el encabezado "Laravel"
             Mail::html($htmlContent, function($message) use ($correoEstudiante, $nombreCompleto) {
                 $message->to($correoEstudiante, $nombreCompleto)
-                        ->subject('❌ Tu pago fue rechazado | SAINS Educación')
-                        ->from(config('mail.from.address', 'sains.ingreso@gmail.com'), 'SAINS Educación');
+                        ->subject('❌ Tu pago fue rechazado | SAINS Bachillerato')
+                        ->from(config('mail.from.address', 'sains.bachillerato@gmail.com'), 'SAINS Bachillerato · ISSFAM');
             });
             
             Log::info('📧 Correo de rechazo enviado a: ' . $correoEstudiante);
@@ -570,8 +571,8 @@ class PagoController extends Controller
             // Enviar usando Mail::html() - Esto EVITA el encabezado "Laravel"
             Mail::html($htmlContent, function($message) use ($correoEstudiante, $nombreCompleto) {
                 $message->to($correoEstudiante, $nombreCompleto)
-                        ->subject('⚠️ Actualización de tu pago | SAINS Educación')
-                        ->from(config('mail.from.address', 'sains.ingreso@gmail.com'), 'SAINS Educación');
+                        ->subject('⚠️ Actualización de tu pago | SAINS Bachillerato')
+                        ->from(config('mail.from.address', 'sains.bachillerato@gmail.com'), 'SAINS Bachillerato · ISSFAM');
             });
             
             Log::info('📧 Correo de desactivación enviado a: ' . $correoEstudiante);

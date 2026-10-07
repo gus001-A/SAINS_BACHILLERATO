@@ -96,7 +96,7 @@ import PublicLayout from '@/Layouts/PublicLayout.vue';
 
                             <h3>Garantía de reembolso</h3>
                             <p><strong>Si no obtienes un lugar en la universidad, te regresamos tu dinero.</strong></p>
-                            <p>Necesitas acreditar nuestra metodología de preparación académica: estudiar todos los videos, podcast, ejercicios y guías para obtener un avance del 100% del curso, y posteriormente acreditar con 95 puntos el simulador de admisión. Si logras esas metas y no quedas en la universidad, te regresamos tu dinero. Solo envía un correo a <a href="mailto:ayuda@ingresoalauni.com">ayuda@ingresoalauni.com</a>.</p>
+                            <p>Necesitas acreditar nuestra metodología de preparación académica: estudiar todos los videos, podcast, ejercicios y guías para obtener un avance del 100% del curso, y posteriormente acreditar con 95 puntos el simulador de admisión. Si logras esas metas y no quedas en la universidad, te regresamos tu dinero. Solo envía un correo a <a href="mailto:sains.bachillerato@gmail.com">sains.bachillerato@gmail.com</a>.</p>
                         </div>
                     </div>
                 </div>
@@ -107,7 +107,7 @@ import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 <style scoped>
 .terms-hero {
-    background: linear-gradient(135deg, #3a0ca3 0%, #4361ee 100%);
+    background: linear-gradient(135deg, #0b2c6e 0%, #135fc5 100%);
     color: #fff;
     padding: 140px 0 60px;
 }
@@ -144,7 +144,7 @@ import PublicLayout from '@/Layouts/PublicLayout.vue';
     font-weight: 700;
     font-size: 1.15rem;
     margin: 1.75rem 0 0.5rem;
-    color: #3a0ca3;
+    color: #0b2c6e;
 }
 
 .terms-doc p,

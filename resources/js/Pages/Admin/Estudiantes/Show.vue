@@ -98,6 +98,15 @@ const facts = computed(() => [
     { label: 'Nacimiento', value: props.estudiante.fecha_nacimiento || '—' },
     { label: 'Inscripción', value: props.estudiante.fecha_inscripcion || '—' },
     { label: 'Cupón', value: props.estudiante.cupon || '—' },
+    { label: 'Carrera', value: props.estudiante.carrera || 'Sin carrera' },
+    { label: 'CURP', value: props.estudiante.curp || '—' },
+    { label: 'Domicilio', value: props.estudiante.domicilio || '—', ancho: true },
+    {
+        label: 'Cambios de datos',
+        value: props.estudiante.ediciones_datos
+            ? `${props.estudiante.ediciones_datos.total} de ${props.estudiante.ediciones_datos.max_total}${props.estudiante.ediciones_datos.restantes_total === 0 ? ' · bloqueado' : ''}`
+            : '—',
+    },
 ]);
 
 /* ---- Progreso de videos ---- */
@@ -114,16 +123,19 @@ const seg = computed(() => ({
 /* ---- Exámenes ---- */
 const tipoMeta = (t) => {
     const k = String(t || '').toLowerCase();
-    if (k.includes('materia')) return { color: '#2563eb', bg: '#eff6ff', label: 'Por materia' };
+    if (k.includes('materia')) return { color: '#135fbc', bg: '#f2f6fa', label: 'Por materia' };
     if (k.includes('curso')) return { color: '#16a34a', bg: '#f0fdf4', label: 'Por curso' };
     if (k.includes('simula')) return { color: '#dc2626', bg: '#fef2f2', label: 'Simulación' };
-    return { color: '#7c3aed', bg: '#f5f3ff', label: t ? (t[0].toUpperCase() + t.slice(1)) : 'Examen' };
+    if (k.includes('certific')) return { color: '#b45309', bg: '#fffbeb', label: 'Certificado' };
+    return { color: '#1550d0', bg: '#f2f5fa', label: t ? (t[0].toUpperCase() + t.slice(1)) : 'Examen' };
 };
 const califColor = (n) => (n >= 80 ? '#16a34a' : n >= 60 ? '#f59e0b' : '#dc2626');
 const examColumns = [
     { title: 'Tipo', key: 'tipo' },
+    { title: 'Aciertos', key: 'aciertos', width: 110, align: 'center' },
     { title: 'Calificación', key: 'calif' },
-    { title: 'Fecha', dataIndex: 'fecha', key: 'fecha', width: 120, align: 'right' },
+    { title: 'Fecha', dataIndex: 'fecha', key: 'fecha', width: 110, align: 'right' },
+    { title: '', key: 'accion', width: 120, align: 'right' },
 ];
 
 /* =========================================================
@@ -360,7 +372,7 @@ onMounted(cargarDocumentos);
                         </a-tag>
                     </div>
                     <div class="facts">
-                        <div v-for="f in facts" :key="f.label" class="fact">
+                        <div v-for="f in facts" :key="f.label" class="fact" :class="{ 'fact--ancho': f.ancho }">
                             <span class="fact__label">{{ f.label }}</span>
                             <span class="fact__value">{{ f.value }}</span>
                         </div>
@@ -375,7 +387,7 @@ onMounted(cargarDocumentos);
                         <div class="card__title">Progreso de videos</div>
                         <div class="vp">
                             <a-progress type="circle" :percent="stats.porcentaje_progreso" :size="128" :stroke-width="9"
-                                :stroke-color="{ '0%': '#6366f1', '100%': '#9333ea' }" />
+                                :stroke-color="{ '0%': '#1664db', '100%': '#1751df' }" />
                             <div class="vp__side">
                                 <div class="vp__bar">
                                     <span class="vp__bar-seg vp--done" :style="{ width: seg.done + '%' }"></span>
@@ -504,12 +516,22 @@ onMounted(cargarDocumentos);
                     Exámenes realizados
                     <span class="card__meta">{{ stats.total_examenes }} en total · promedio {{ stats.promedio_calificaciones }}/100</span>
                 </div>
-                <a-table v-if="examenes.length" :columns="examColumns" :data-source="examenes" :pagination="false" row-key="id" size="middle" :scroll="{ x: 460 }">
+                <a-table v-if="examenes.length" :columns="examColumns" :data-source="examenes" :pagination="examenes.length > 10 ? { pageSize: 10, size: 'small' } : false" row-key="id" size="middle" :scroll="{ x: 640 }">
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'tipo'">
                             <span class="exam-tipo" :style="{ color: tipoMeta(record.tipo).color, background: tipoMeta(record.tipo).bg }">
                                 {{ tipoMeta(record.tipo).label }}
                             </span>
+                        </template>
+                        <template v-else-if="column.key === 'aciertos'">
+                            <span v-if="record.total_preguntas"><b>{{ record.aciertos }}</b> / {{ record.total_preguntas }}</span>
+                            <span v-else>—</span>
+                        </template>
+                        <template v-else-if="column.key === 'accion'">
+                            <a-tag v-if="record.corregido" color="gold" :bordered="false">Corregido</a-tag>
+                            <Link :href="route('admin.examenes-realizados.show', record.id)">
+                                <a-button size="small">Ver / corregir</a-button>
+                            </Link>
                         </template>
                         <template v-else-if="column.key === 'calif'">
                             <div class="exam-score">
@@ -637,7 +659,7 @@ onMounted(cargarDocumentos);
     width: 64px; height: 64px; flex: none; border-radius: 18px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 22px; color: #fff;
-    background: linear-gradient(135deg, #4f46e5, #9333ea);
+    background: linear-gradient(135deg, #1851ad, #1751df);
 }
 .profile__avatar img { width: 100%; height: 100%; object-fit: cover; }
 .profile__body { flex: 1; min-width: 0; }
@@ -649,6 +671,7 @@ onMounted(cargarDocumentos);
     background: var(--sains-line); border: 1px solid var(--sains-line);
     border-radius: 12px; overflow: hidden;
 }
+.fact--ancho { flex-basis: 100% !important; }
 .fact { flex: 1 1 160px; display: flex; flex-direction: column; gap: 2px; padding: 9px 13px; background: #fff; }
 .fact__label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--sains-faint); font-weight: 600; }
 .fact__value { font-size: 13px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -662,7 +685,7 @@ onMounted(cargarDocumentos);
 .vp__legend li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--sains-muted); }
 .vp__legend b { color: #0f172a; font-weight: 800; font-size: 14px; }
 .vp__legend i { width: 9px; height: 9px; border-radius: 3px; flex: none; }
-.vp--done { background: #6366f1; }
+.vp--done { background: #1664db; }
 .vp--prog { background: #f59e0b; }
 .vp--none { background: #cbd5e1; }
 @media (max-width: 480px) { .vp { flex-direction: column; gap: 18px; } }
@@ -673,7 +696,7 @@ onMounted(cargarDocumentos);
 .week__bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
 .week__bar {
     width: 100%; border-radius: 6px 6px 0 0; min-height: 4px;
-    background: linear-gradient(180deg, #6366f1, #7c3aed);
+    background: linear-gradient(180deg, #1664db, #1550d0);
     transition: height .4s cubic-bezier(.16, 1, .3, 1);
 }
 .week__bar.is-zero { background: #e2e8f0; }
@@ -705,10 +728,10 @@ onMounted(cargarDocumentos);
     padding: 10px 12px;
     border-radius: 12px;
     border: 1.5px solid var(--sains-line);
-    background: #fafbff;
+    background: #fafbfd;
     transition: border-color .2s ease, background .2s ease, transform .15s ease;
 }
-.doc-row:hover { border-color: #c7d2fe; transform: translateY(-1px); }
+.doc-row:hover { border-color: #c5d5e9; transform: translateY(-1px); }
 .doc-row--ok  { border-color: #bbf7d0; background: #f0fdf4; }
 .doc-row--ok:hover { border-color: #86efac; }
 .doc-row--rej { border-color: #fecaca; background: #fef2f2; }
@@ -846,29 +869,29 @@ onMounted(cargarDocumentos);
 .btn-action:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 
 .btn-action--ver {
-    background: linear-gradient(135deg, #eff6ff, #dbeafe);
-    color: #2563eb;
-    border-color: #bfdbfe;
-    box-shadow: 0 4px 10px -6px rgba(37, 99, 235, .4);
+    background: linear-gradient(135deg, #f2f6fa, #e1e9f4);
+    color: #135fbc;
+    border-color: #ccdaeb;
+    box-shadow: 0 4px 10px -6px rgba(19, 95, 188, .4);
 }
 .btn-action--ver:hover {
-    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-    border-color: #60a5fa;
-    color: #1d4ed8;
-    box-shadow: 0 8px 16px -8px rgba(37, 99, 235, .55);
+    background: linear-gradient(135deg, #e1e9f4, #ccdaeb);
+    border-color: #7ba5d9;
+    color: #15509b;
+    box-shadow: 0 8px 16px -8px rgba(19, 95, 188, .55);
 }
 
 .btn-action--dl {
-    background: linear-gradient(135deg, #f5f3ff, #ede9fe);
-    color: #7c3aed;
-    border-color: #ddd6fe;
-    box-shadow: 0 4px 10px -6px rgba(124, 58, 237, .4);
+    background: linear-gradient(135deg, #f2f5fa, #e6ecf6);
+    color: #1550d0;
+    border-color: #d1dbee;
+    box-shadow: 0 4px 10px -6px rgba(21, 80, 208, .4);
 }
 .btn-action--dl:hover {
-    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
-    border-color: #a78bfa;
-    color: #6d28d9;
-    box-shadow: 0 8px 16px -8px rgba(124, 58, 237, .55);
+    background: linear-gradient(135deg, #e6ecf6, #d1dbee);
+    border-color: #7e9dd9;
+    color: #1d48a5;
+    box-shadow: 0 8px 16px -8px rgba(21, 80, 208, .55);
 }
 
 .btn-action--ok {

@@ -4,12 +4,12 @@
 @section('preheader', 'Tu pago fue aprobado y tu acceso Premium ya está activo.')
 @section('badge', 'Pago aprobado')
 @section('titulo', '¡Tu pago fue aprobado!')
-@section('subtitulo', 'Tu acceso al Curso Premium ya está activo')
+@section('subtitulo', 'Tu Plan Premium del bachillerato ya está activo')
 
 @section('content')
     <p style="margin:0 0 22px; font-size:15px; line-height:1.6; color:#475569;">
         Confirmamos que <strong>tu pago fue validado correctamente</strong>. Tu cuenta ya tiene acceso
-        completo a las clases en video, el simulador de examen y el seguimiento de tu progreso.
+        completo a las materias de tu carrera, las guías de estudio, el examen de prueba y el examen para certificar.
     </p>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; margin-bottom:26px;">
@@ -43,13 +43,13 @@
             <td align="center" style="padding:6px 0 22px;">
                 <a href="{{ route('estudiante.clases-premium') }}"
                    style="display:inline-block; background-color:#16a34a; color:#ffffff; text-decoration:none; font-size:15px; font-weight:700; padding:15px 38px; border-radius:12px;">
-                    Ir a mis clases
+                    Ir a mi carrera
                 </a>
             </td>
         </tr>
     </table>
 
     <p style="margin:0; font-size:13px; line-height:1.6; color:#94a3b8;">
-        Consejo: empieza por el simulador para conocer tu nivel y crea una rutina de estudio de 30 minutos al día.
+        Consejo: empieza por un examen de prueba de 50 preguntas para conocer tu nivel y crea una rutina de estudio de 30 minutos al día.
     </p>
 @endsection

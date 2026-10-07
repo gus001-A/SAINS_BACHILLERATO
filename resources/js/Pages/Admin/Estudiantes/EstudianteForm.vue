@@ -5,6 +5,7 @@ import {
 } from '@ant-design/icons-vue';
 import PhoneInput from '@/Components/PhoneInput.vue';
 import DateField from '@/Components/DateField.vue';
+import CamposIssfam from '@/Components/CamposIssfam.vue';
 
 const props = defineProps({
     form: { type: Object, required: true },
@@ -62,6 +63,8 @@ const err = (f) => (props.form.errors[f] ? 'error' : undefined);
                 </a-form-item>
             </a-col>
         </a-row>
+
+        <CamposIssfam :form="form" :carreras="opciones.carreras || []" :entidades="opciones.entidades || []" :requerido="false" />
 
         <a-divider orientation="left"><span class="fsec"><LockOutlined />Cuenta y plan</span></a-divider>
         <a-row :gutter="16">

@@ -92,7 +92,7 @@ const pasos = [
 .pe-steps__n {
     width: 26px; height: 26px; border-radius: 8px; flex: none;
     display: flex; align-items: center; justify-content: center;
-    background: #eef2ff; color: #4f46e5; font-weight: 700; font-size: 13px;
+    background: #eef3f9; color: #1851ad; font-weight: 700; font-size: 13px;
 }
 .pe-steps li span:last-child { display: flex; flex-direction: column; line-height: 1.35; }
 .pe-steps b { font-size: 13.5px; color: #0f172a; }

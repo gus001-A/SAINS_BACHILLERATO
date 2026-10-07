@@ -288,5 +288,5 @@ const columns = [
     font-size: 11.5px; padding: 5px 10px; border-radius: 999px; cursor: pointer;
     transition: all .12s ease; text-align: left;
 }
-.rj-chip:hover { border-color: #c7d2fe; background: #eef2ff; color: #4338ca; }
+.rj-chip:hover { border-color: #c5d5e9; background: #eef3f9; color: #214784; }
 </style>

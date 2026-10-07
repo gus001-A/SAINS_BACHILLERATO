@@ -84,7 +84,7 @@ const ultimosColumns = [
 }
 .mbar { flex: 1; display: flex; flex-direction: column; align-items: center; }
 .mbar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
-.mbar-fill { width: 100%; background: linear-gradient(180deg, #4361ee, #7c3aed); border-radius: 6px 6px 0 0; min-height: 3px; }
+.mbar-fill { width: 100%; background: linear-gradient(180deg, #135fc5, #1550d0); border-radius: 6px 6px 0 0; min-height: 3px; }
 .mbar-label { font-size: 10px; color: #64748b; margin-top: 4px; }
 .mbar-val { font-size: 10px; font-weight: 600; }
 </style>

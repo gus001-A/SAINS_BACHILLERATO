@@ -13,8 +13,11 @@ use App\Http\Controllers\Admin\AsignaturaController;
 use App\Http\Controllers\Admin\VideoController;
 use App\Http\Controllers\Admin\ExamenRealizadoController;
 use App\Http\Controllers\Admin\ClaseController;
+use App\Http\Controllers\Admin\CarreraBachilleratoController;
+use App\Http\Controllers\Admin\GuiaController;
 use App\Http\Controllers\Alumno\AlumnoController;
 use App\Http\Controllers\Alumno\DocumentoEstudianteController;
+use App\Http\Controllers\Alumno\GuiaEstudianteController;
 use App\Http\Controllers\NotificacionController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Auth\GoogleController;
@@ -154,6 +157,8 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::post('/', [PreguntaController::class, 'storePregunta'])->name('store');
         Route::get('/exportar-excel', [PreguntaController::class, 'exportarExcel'])->name('exportar-excel');
         Route::get('/exportar-csv', [PreguntaController::class, 'exportarCsv'])->name('exportar-csv');
+        Route::get('/plantilla', [PreguntaController::class, 'plantilla'])->name('plantilla');
+        Route::post('/importar/analizar', [PreguntaController::class, 'analizarImportacion'])->name('importar.analizar');
         Route::post('/importar', [PreguntaController::class, 'importar'])->name('importar');
         Route::get('/{id}', [PreguntaController::class, 'showPregunta'])->name('show');
         Route::get('/{id}/editar', [PreguntaController::class, 'editPregunta'])->name('edit');
@@ -202,6 +207,7 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::get('/', [ExamenRealizadoController::class, 'index'])->name('index');
         Route::get('/estadisticas', [ExamenRealizadoController::class, 'estadisticas'])->name('estadisticas'); // 👈 NUEVA RUTA
         Route::get('/{id}', [ExamenRealizadoController::class, 'show'])->name('show');
+        Route::put('/{id}', [ExamenRealizadoController::class, 'update'])->name('update');
         Route::delete('/{id}', [ExamenRealizadoController::class, 'destroy'])->name('destroy');
     });
 
@@ -238,6 +244,17 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::put('/{id}', [InteraccionCallCenterController::class, 'update'])->name('update');
         Route::delete('/{id}', [InteraccionCallCenterController::class, 'destroy'])->name('destroy');
     });
+
+    // ========== CARRERAS Y GUÍAS (ISSFAM) ==========
+    Route::get('/carreras', [CarreraBachilleratoController::class, 'index'])->name('carreras.index');
+    Route::post('/carreras', [CarreraBachilleratoController::class, 'store'])->name('carreras.store');
+    Route::put('/carreras/{carrera}', [CarreraBachilleratoController::class, 'update'])->name('carreras.update');
+    Route::delete('/carreras/{carrera}', [CarreraBachilleratoController::class, 'destroy'])->name('carreras.destroy');
+
+    Route::get('/guias', [GuiaController::class, 'index'])->name('guias.index');
+    Route::post('/guias', [GuiaController::class, 'store'])->name('guias.store');
+    Route::put('/guias/{guia}', [GuiaController::class, 'update'])->name('guias.update');
+    Route::delete('/guias/{guia}', [GuiaController::class, 'destroy'])->name('guias.destroy');
 
     // ========== GESTIÓN DE ASIGNATURAS (MATERIAS) ==========
     Route::prefix('asignaturas')->name('asignaturas.')->group(function () {
@@ -282,11 +299,27 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
     Route::put('/perfil/password', [AdminController::class, 'updatePassword'])->name('perfil.password');
 });
 
+// Archivo de una guía (visor y descarga) servido por Laravel, sin depender de public/storage.
+Route::get('/guias/{guia}/archivo', [\App\Http\Controllers\GuiaArchivoController::class, 'show'])
+    ->middleware('auth')->name('guias.archivo');
+
+// Comprobantes de pago y fotos de perfil servidos por Laravel (sin depender de public/storage).
+Route::middleware('auth')->prefix('archivos')->name('archivos.')->group(function () {
+    Route::get('/comprobante/{pago}', [\App\Http\Controllers\ArchivoPrivadoController::class, 'comprobante'])->name('comprobante');
+    Route::get('/foto/{estudiante}', [\App\Http\Controllers\ArchivoPrivadoController::class, 'foto'])->name('foto');
+});
+
+// Autocompletado de domicilio por código postal (registro del alumno y formularios del admin).
+Route::get('/codigos-postales/{cp}', [\App\Http\Controllers\CodigoPostalController::class, 'show'])
+    ->middleware(['auth', 'throttle:60,1'])->name('codigos-postales.show');
+
 Route::middleware(['auth'])->prefix('estudiante')->name('estudiante.')->group(function () {
     // Vistas principales
     Route::get('/dashboard', [AlumnoController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guias', [GuiaEstudianteController::class, 'index'])->name('guias');
     Route::get('/progreso', [AlumnoController::class, 'progreso'])->name('progreso');
     Route::get('/simulador', [AlumnoController::class, 'simulador'])->name('simulador');
+    Route::get('/certificacion', [AlumnoController::class, 'certificacion'])->name('certificacion');
     Route::get('/examenes', function () { return \Inertia\Inertia::render('Estudiante/Examenes'); })->name('examenes');
     Route::get('/clases-premium', [AlumnoController::class, 'clasesPremium'])->name('clases-premium');
 

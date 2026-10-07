@@ -42,7 +42,8 @@ const puedeSubir = computed(() => ['pendiente', 'rechazado'].includes(props.pago
             <a-button type="primary" @click="router.visit(route('estudiante.checkout'))">Adquirir plan</a-button>
         </a-empty>
 
-        <a-card v-else :bordered="false" style="max-width: 640px">
+        <!-- Sin max-width: ahora ocupa el mismo ancho que el hero -->
+        <a-card v-else :bordered="false">
             <a-result :status="estado.color === 'red' ? 'error' : (estado.color === 'green' ? 'success' : 'info')"
                 :title="estado.text" :sub-title="estado.desc" style="padding-top: 0" />
 
@@ -51,7 +52,7 @@ const puedeSubir = computed(() => ['pendiente', 'rechazado'].includes(props.pago
                     <a-typography-text copyable code>{{ pago.referencia_pago }}</a-typography-text>
                 </a-descriptions-item>
                 <a-descriptions-item label="Monto">
-                    <b style="color: #4f46e5">{{ money(pago.monto_pago) }} MXN</b>
+                    <b style="color: #1851ad">{{ money(pago.monto_pago) }} MXN</b>
                 </a-descriptions-item>
                 <a-descriptions-item label="Método">{{ pago.tipo_pago }}</a-descriptions-item>
                 <a-descriptions-item label="Fecha de solicitud">{{ pago.fecha_pago_formato }}</a-descriptions-item>

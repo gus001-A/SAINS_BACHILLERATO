@@ -25,6 +25,10 @@ const form = useForm({
     password_confirmation: '',
     plan_activo: !!e.plan_activo,
     cupon_id: undefined,
+    carrera_id: e.carrera_id ?? undefined, curp: e.curp ?? '', calle_numero: e.calle_numero ?? '',
+    colonia: e.colonia ?? '', codigo_postal: e.codigo_postal ?? '', municipio: e.municipio ?? '',
+    entidad_federativa: e.entidad_federativa ?? undefined,
+    reiniciar_candado: false,
 });
 
 const back = () => router.visit(route('admin.estudiantes.index'));
@@ -38,6 +42,15 @@ const submit = () => form.put(route('admin.estudiantes.update', e.id));
             <a-alert v-if="e.cupon" type="info" show-icon style="margin-bottom: 16px"
                 :message="`Cupón aplicado actualmente: ${e.cupon}`" />
             <EstudianteForm :form="form" :opciones="opciones" modo="edit" />
+            <a-alert v-if="e.candado" :type="e.candado.restantes_total === 0 ? 'warning' : 'info'" show-icon style="margin-top: 8px"
+                :message="`Candado de datos del alumno: ${e.candado.total} de ${e.candado.max_total} cambios usados`
+                    + (e.candado.restantes_total === 0 ? ' · sus datos están bloqueados' : '')">
+                <template #description>
+                    <a-checkbox v-model:checked="form.reiniciar_candado">
+                        Reiniciar el candado (le devuelve sus {{ e.candado.max_total }} cambios al guardar)
+                    </a-checkbox>
+                </template>
+            </a-alert>
         </FormPage>
     </AdminLayout>
 </template>

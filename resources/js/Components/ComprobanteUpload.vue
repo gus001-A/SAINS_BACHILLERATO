@@ -136,7 +136,7 @@ onBeforeUnmount(limpiarPreview);
     padding: 6px 6px 6px 12px; background: #f8fafc; border-bottom: 1px solid var(--sains-line);
 }
 .cu-preview__name { font-size: 12.5px; font-weight: 600; color: #475569; display: inline-flex; align-items: center; gap: 6px; }
-.cu-preview__name .anticon { color: #6366f1; }
+.cu-preview__name .anticon { color: #1664db; }
 .cu-preview__name small { color: #94a3b8; font-weight: 500; }
 .cu-preview__img { display: block; width: 100%; max-height: 300px; object-fit: contain; background: #0f172a; }
 .cu-preview__pdf { display: block; width: 100%; height: 340px; border: 0; }

@@ -20,7 +20,7 @@ const fuerza = computed(() => {
     return Math.min(s, 4);
 });
 const fuerzaTxt = computed(() => ['', 'Débil', 'Aceptable', 'Buena', 'Excelente'][fuerza.value]);
-const fuerzaColor = computed(() => ['#e2e8f0', '#ef4444', '#f59e0b', '#3b82f6', '#16a34a'][fuerza.value]);
+const fuerzaColor = computed(() => ['#e2e8f0', '#ef4444', '#f59e0b', '#1774e6', '#16a34a'][fuerza.value]);
 
 function submit() {
     if (!acepta.value) {
@@ -116,14 +116,14 @@ function submit() {
 
 /* ===== Enlaces SIN subrayado ===== */
 .au-link {
-    color: #1d4ed8;
+    color: #15509b;
     font-weight: 600;
     text-decoration: none !important;
 }
 .au-link:hover,
 .au-link:focus,
 .au-link:visited {
-    color: #1e3a8a;
+    color: #163964;
     text-decoration: none !important;
 }
 .au-link--strong {
@@ -149,8 +149,8 @@ function submit() {
     text-decoration: none !important;
 }
 .au-google:hover {
-    border-color: #1d4ed8;
-    color: #1e3a8a;
+    border-color: #15509b;
+    color: #163964;
     text-decoration: none !important;
 }
 .au-google-content {

@@ -1,10 +1,13 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 import { confirmAction } from '@/lib/notify';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 const activePath = ref(1);
+
+/* Carreras del Bachillerato Tecnológico (se administran en el panel → Carreras). */
+const carreras = computed(() => usePage().props.carrerasOferta ?? []);
 
 /* ---------- Revelado al hacer scroll ---------- */
 const io = typeof IntersectionObserver !== 'undefined'
@@ -202,7 +205,7 @@ function selectPlan(openAuth, user) {
             <div class="container hero__inner">
                 <span class="hero__badge">
                     <span class="hero__badge-dot"></span>
-                    Bachillerato Nacional · 100% en línea
+                    ISSFAM · Bachillerato Tecnológico
                 </span>
 
                 <h1 class="hero__title">
@@ -210,9 +213,10 @@ function selectPlan(openAuth, user) {
                 </h1>
 
                 <p class="hero__sub">
-                    Obtén tu certificado de bachillerato nacional en solo 3 meses. Nuestra plataforma
-                    en línea te prepara con el plan de estudios avalado por la SEP, para que concluyas
-                    tu bachillerato de forma rápida, flexible y 100% en línea.
+                    Prestación de servicio estratégico para que el personal y los beneficiarios de la
+                    <b>Guardia Nacional</b> tengan acceso a <b>Educación Media Superior</b>. Esta oferta educativa
+                    consiste en un <b>Bachillerato Tecnológico con Formación Profesional</b>, que se imparte en
+                    modalidades autoplaneada y mixta a través de planteles oficiales.
                 </p>
 
                 <div class="hero__cta">
@@ -238,6 +242,24 @@ function selectPlan(openAuth, user) {
             <a class="hero__scroll" href="#nosotros" @click.prevent="scrollTo('nosotros')" aria-label="Bajar">
                 <i class="fas fa-chevron-down"></i>
             </a>
+        </section>
+
+        <!-- ================= CARRERAS (ISSFAM) ================= -->
+        <section v-if="carreras.length" class="sec sec--alt" id="carreras">
+            <div class="container">
+                <div class="sec__head" v-reveal>
+                    <span class="eyebrow">Bachillerato Tecnológico</span>
+                    <h2 class="sec__title">Carreras que se ofertan</h2>
+                    <p class="sec__sub">Elige la formación profesional que cursarás junto con tu bachillerato.</p>
+                </div>
+                <div class="carr-grid">
+                    <article v-for="(c, i) in carreras" :key="c.id" class="carr-card" v-reveal="i * 90">
+                        <span class="carr-card__ic"><i class="fas" :class="c.icono"></i></span>
+                        <h3>{{ c.nombre }}</h3>
+                        <p v-if="c.descripcion">{{ c.descripcion }}</p>
+                    </article>
+                </div>
+            </div>
         </section>
 
         <!-- ================= BENEFICIOS ================= -->
@@ -411,31 +433,17 @@ function selectPlan(openAuth, user) {
             </div>
         </section>
 
-        <!-- ================= CTA FINAL ================= -->
-        <section class="closing">
-            <div class="container closing__inner" v-reveal>
-                <h2>¿Listo para obtener tu certificado?</h2>
-                <p>Empieza hoy tu proceso de inscripción. 100% en línea, avalado por la SEP.</p>
-                <Link v-if="user" :href="route('estudiante.dashboard')" class="btn-xl btn-xl--white">
-                    <i class="fas fa-graduation-cap"></i> Ir a mi curso
-                </Link>
-                <button v-else class="btn-xl btn-xl--white" @click="openAuth('register')">
-                    <i class="fas fa-rocket"></i> Crear cuenta gratis
-                </button>
-            </div>
-        </section>
     </PublicLayout>
 </template>
 
 <style scoped>
 /* ===================== Tokens locales ===================== */
 .hero,
-.sec,
-.closing {
-    --brand: #4f46e5;
-    --brand-2: #7c3aed;
-    --brand-ink: #1e1b4b;
-    --amber: #f59e0b;
+.sec {
+    --brand: #1851ad;
+    --brand-2: #1550d0;
+    --brand-ink: #0e2d66;
+    --amber: #f5b301;
     --ink: #0f172a;
     --muted: #64748b;
 }
@@ -469,10 +477,10 @@ function selectPlan(openAuth, user) {
 .btn-xl i { font-size: 0.9em; }
 .btn-xl--solid {
     background: #fff;
-    color: #3730a3;
+    color: #1b3a6c;
     box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.45);
 }
-.btn-xl--solid:hover { transform: translateY(-3px); box-shadow: 0 24px 50px -14px rgba(0, 0, 0, 0.55); color: #3730a3; }
+.btn-xl--solid:hover { transform: translateY(-3px); box-shadow: 0 24px 50px -14px rgba(0, 0, 0, 0.55); color: #1b3a6c; }
 .btn-xl--ghost {
     background: rgba(255, 255, 255, 0.08);
     color: #fff;
@@ -538,7 +546,7 @@ function selectPlan(openAuth, user) {
     position: relative;
 }
 .sec--tight { padding-top: 0; }
-.sec--alt { background: #f5f7ff; }
+.sec--alt { background: #f5f7fb; }
 
 /* ===================== HERO ===================== */
 .hero {
@@ -548,7 +556,7 @@ function selectPlan(openAuth, user) {
     align-items: center;
     overflow: hidden;
     color: #fff;
-    background: linear-gradient(135deg, #0b1120 0%, #1e1b4b 45%, #312e81 78%, #4338ca 100%);
+    background: linear-gradient(135deg, #0b1120 0%, #0d1d36 45%, #17325d 78%, #214784 100%);
     padding: 120px 0 90px;
 }
 .hero__bg { position: absolute; inset: 0; pointer-events: none; }
@@ -562,7 +570,7 @@ function selectPlan(openAuth, user) {
 .hero__orb--indigo {
     width: 520px; height: 520px;
     top: -160px; left: -120px;
-    background: radial-gradient(circle, #6366f1, transparent 68%);
+    background: radial-gradient(circle, #1664db, transparent 68%);
 }
 .hero__orb--amber {
     width: 440px; height: 440px;
@@ -586,7 +594,7 @@ function selectPlan(openAuth, user) {
     top: 34%; left: 50%;
     width: 760px; height: 420px;
     transform: translate(-50%, -50%);
-    background: radial-gradient(ellipse, rgba(124, 58, 237, 0.5), transparent 70%);
+    background: radial-gradient(ellipse, rgba(21, 80, 208, 0.5), transparent 70%);
     filter: blur(40px);
 }
 @keyframes hero-float {
@@ -684,7 +692,7 @@ function selectPlan(openAuth, user) {
 .hero__stats strong {
     font-size: clamp(1.5rem, 2.6vw, 2rem);
     font-weight: 800;
-    background: linear-gradient(135deg, #fff, #c7d2fe);
+    background: linear-gradient(135deg, #fff, #c5d5e9);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -724,8 +732,8 @@ function selectPlan(openAuth, user) {
 }
 .feature:hover {
     transform: translateY(-8px);
-    border-color: #dfe3ff;
-    box-shadow: 0 34px 60px -24px rgba(79, 70, 229, 0.32);
+    border-color: #dce5f2;
+    box-shadow: 0 34px 60px -24px rgba(24, 81, 173, 0.32);
 }
 .feature__ic {
     display: inline-flex;
@@ -736,7 +744,7 @@ function selectPlan(openAuth, user) {
     font-size: 1.4rem;
     color: #fff;
     background: linear-gradient(135deg, var(--brand), var(--brand-2));
-    box-shadow: 0 12px 24px -10px rgba(79, 70, 229, 0.6);
+    box-shadow: 0 12px 24px -10px rgba(24, 81, 173, 0.6);
     margin-bottom: 1.25rem;
 }
 .feature h3 { font-size: 1.2rem; font-weight: 750; color: var(--ink); margin: 0 0 0.5rem; }
@@ -749,8 +757,8 @@ function selectPlan(openAuth, user) {
     border-radius: 32px;
     padding: clamp(2rem, 4vw, 3.25rem);
     color: #fff;
-    background: linear-gradient(130deg, #4338ca 0%, #6d28d9 55%, #7c3aed 100%);
-    box-shadow: 0 40px 80px -30px rgba(79, 70, 229, 0.5);
+    background: linear-gradient(130deg, #214784 0%, #1d48a5 55%, #1550d0 100%);
+    box-shadow: 0 40px 80px -30px rgba(24, 81, 173, 0.5);
 }
 .admis__shape {
     position: absolute;
@@ -788,12 +796,12 @@ function selectPlan(openAuth, user) {
     cursor: pointer;
     transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
 }
-.step:hover { transform: translateY(-4px); border-color: #cdd4f7; }
+.step:hover { transform: translateY(-4px); border-color: #c8d7ea; }
 .step.is-active {
     background: linear-gradient(135deg, var(--brand), var(--brand-2));
     border-color: transparent;
     color: #fff;
-    box-shadow: 0 22px 44px -18px rgba(79, 70, 229, 0.6);
+    box-shadow: 0 22px 44px -18px rgba(24, 81, 173, 0.6);
 }
 .step__num {
     position: absolute;
@@ -811,7 +819,7 @@ function selectPlan(openAuth, user) {
     border-radius: 14px;
     font-size: 1.25rem;
     color: var(--brand);
-    background: rgba(79, 70, 229, 0.1);
+    background: rgba(24, 81, 173, 0.1);
     transition: background 0.25s ease, color 0.25s ease;
 }
 .step.is-active .step__ic { background: rgba(255, 255, 255, 0.2); color: #fff; }
@@ -830,10 +838,10 @@ function selectPlan(openAuth, user) {
     justify-content: center;
     padding: 1.75rem;
     border-radius: 22px;
-    background: linear-gradient(160deg, #eef2ff, #f5f3ff);
-    border: 1px solid #e5e9fb;
+    background: linear-gradient(160deg, #eef3f9, #f2f5fa);
+    border: 1px solid #e3eaf4;
 }
-.method-panel__media img { max-width: 190px; width: 100%; height: auto; filter: drop-shadow(0 18px 26px rgba(49, 46, 129, 0.22)); }
+.method-panel__media img { max-width: 190px; width: 100%; height: auto; filter: drop-shadow(0 18px 26px rgba(23, 50, 93, 0.22)); }
 .method-panel__title { font-size: clamp(1.35rem, 2.2vw, 1.7rem); font-weight: 800; color: var(--ink); margin: 0 0 0.75rem; }
 .method-panel__desc { color: var(--muted); line-height: 1.65; margin: 0 0 1.25rem; }
 .ticks { list-style: none; padding: 0; margin: 0; }
@@ -867,7 +875,7 @@ function selectPlan(openAuth, user) {
     box-shadow: 0 18px 40px -24px rgba(15, 23, 42, 0.2);
     transition: transform 0.28s ease, box-shadow 0.28s ease;
 }
-.teacher:hover { transform: translateY(-8px); box-shadow: 0 34px 56px -24px rgba(79, 70, 229, 0.32); }
+.teacher:hover { transform: translateY(-8px); box-shadow: 0 34px 56px -24px rgba(24, 81, 173, 0.32); }
 .teacher__photo {
     position: relative;
     aspect-ratio: 1 / 1;
@@ -891,7 +899,7 @@ function selectPlan(openAuth, user) {
     font-size: 0.78rem;
     font-weight: 700;
     color: var(--brand);
-    background: rgba(79, 70, 229, 0.09);
+    background: rgba(24, 81, 173, 0.09);
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
 }
@@ -903,7 +911,7 @@ function selectPlan(openAuth, user) {
     border-radius: 34px;
     padding: clamp(2rem, 4vw, 3.25rem);
     color: #fff;
-    background: linear-gradient(150deg, #0f172a 0%, #1e293b 60%, #312e81 100%);
+    background: linear-gradient(150deg, #0f172a 0%, #1e293b 60%, #17325d 100%);
     box-shadow: 0 44px 90px -34px rgba(15, 23, 42, 0.55);
 }
 .plan__shape {
@@ -977,26 +985,6 @@ function selectPlan(openAuth, user) {
 .guarantee__fine { font-size: 0.8rem; color: var(--faint, #94a3b8); margin-top: 0.5rem !important; }
 
 /* ===================== CTA final ===================== */
-.closing {
-    position: relative;
-    overflow: hidden;
-    padding: 84px 0;
-    text-align: center;
-    color: #fff;
-    background: linear-gradient(135deg, #4338ca, #6d28d9 55%, #7c3aed);
-}
-.closing::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1.4px);
-    background-size: 30px 30px;
-    mask-image: radial-gradient(ellipse 60% 70% at 50% 50%, #000, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 50%, #000, transparent 75%);
-}
-.closing__inner { position: relative; z-index: 1; }
-.closing h2 { font-size: clamp(1.8rem, 3.4vw, 2.6rem); font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.9rem; }
-.closing p { color: rgba(255, 255, 255, 0.82); font-size: 1.05rem; margin: 0 0 1.9rem; }
 
 /* ===================== Responsive ===================== */
 @media (max-width: 991px) {
@@ -1017,4 +1005,27 @@ function selectPlan(openAuth, user) {
     .hero__orb, .hero__badge-dot, .hero__scroll,
     .hero__badge, .hero__title, .hero__sub, .hero__cta, .hero__stats { animation: none !important; }
 }
+
+/* ---------- Carreras (ISSFAM) ---------- */
+.carr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; }
+.carr-card {
+    position: relative; overflow: hidden;
+    padding: 28px 22px 24px; border-radius: 20px; text-align: center;
+    background: #fff; border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 12px 30px -18px rgba(15, 23, 42, .25);
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.carr-card::before {
+    content: ''; position: absolute; inset: 0 0 auto; height: 4px;
+    background: linear-gradient(90deg, #0e2d66, #1851ad 60%, #f5b301);
+}
+.carr-card:hover { transform: translateY(-4px); border-color: #c5d5e9; box-shadow: 0 22px 44px -22px rgba(14, 45, 102, .45); }
+.carr-card__ic {
+    display: inline-grid; place-items: center; width: 74px; height: 74px; margin-bottom: 16px;
+    border-radius: 50%; font-size: 28px; color: #fff;
+    background: linear-gradient(135deg, #0e2d66, #1851ad);
+    box-shadow: 0 0 0 6px #eef3f9;
+}
+.carr-card h3 { margin: 0 0 8px; font-size: 1.08rem; font-weight: 700; color: #0f172a; }
+.carr-card p { margin: 0; font-size: .92rem; line-height: 1.55; color: #64748b; }
 </style>

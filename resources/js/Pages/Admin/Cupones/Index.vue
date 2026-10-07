@@ -314,7 +314,7 @@ const columns = [
             <div v-if="shareCupon" class="share-box">
                 <div class="share-hero">
                     <span class="share-hero__orb" aria-hidden="true"></span>
-                    <img src="/images/logo_u.png" alt="SAINS" class="share-hero__logo" />
+                    <img src="/images/bachillerato-nacional-sm.png" alt="Bachillerato Nacional SAINS" class="share-hero__logo" />
                     <div class="share-hero__title">Compartir cupón</div>
                     <div class="share-hero__sub">Envíalo por WhatsApp o correo</div>
                 </div>
@@ -345,7 +345,7 @@ const columns = [
                         <label>Correo electrónico <span>(opcional)</span></label>
                         <a-input v-model:value="shareCorreo" placeholder="alumno@correo.com"
                             :status="correoValido ? undefined : 'error'">
-                            <template #prefix><MailOutlined style="color:#6366f1" /></template>
+                            <template #prefix><MailOutlined style="color:#1664db" /></template>
                         </a-input>
                     </div>
 
@@ -385,10 +385,10 @@ const columns = [
 .cup-code {
     display: inline-flex; align-items: center; gap: 5px; cursor: pointer; max-width: 100%;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; font-size: 12px;
-    color: #4f46e5; background: #eef2ff; padding: 2px 8px; border-radius: 7px;
+    color: #1851ad; background: #eef3f9; padding: 2px 8px; border-radius: 7px;
     transition: background .14s ease;
 }
-.cup-code:hover { background: #e0e7ff; }
+.cup-code:hover { background: #e0e8f3; }
 .cup-code__txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cup-code__ic { font-size: 10px; opacity: .5; flex: none; }
 
@@ -401,7 +401,7 @@ const columns = [
     padding: 24px 24px 22px;
     text-align: center;
     color: #fff;
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #9333ea 100%);
+    background: linear-gradient(135deg, #1851ad 0%, #1550d0 60%, #1751df 100%);
 }
 .share-hero__orb {
     position: absolute;
@@ -426,8 +426,8 @@ const columns = [
     display: flex;
     align-items: stretch;
     border-radius: 16px;
-    background: #f7f8ff;
-    border: 1px solid #e3e7ff;
+    background: #f6f9fc;
+    border: 1px solid #e1e9f4;
     box-shadow: inset 0 0 0 1px #fff;
     overflow: hidden;
     margin-bottom: 18px;
@@ -437,18 +437,18 @@ const columns = [
 .voucher__code {
     display: block; margin-top: 4px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 800; font-size: 19px;
-    color: #1e1b4b; word-break: break-all;
+    color: #0d1d36; word-break: break-all;
 }
 .voucher__exp { display: block; margin-top: 6px; font-size: 11.5px; color: #64748b; }
 .voucher__cut {
     width: 0; flex: none;
-    border-left: 2px dashed #c7cdf5;
+    border-left: 2px dashed #c0d1e7;
     margin: 10px 0;
 }
 .voucher__amount {
     flex: none; width: 108px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    background: linear-gradient(135deg, #1851ad, #1550d0);
     color: #fff; padding: 10px;
 }
 .voucher__amount b { font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
@@ -475,7 +475,7 @@ const columns = [
 }
 .share-btn:hover { transform: translateY(-1px); }
 .share-btn.is-wa { background: #25D366; color: #fff; box-shadow: 0 10px 20px -10px rgba(37, 211, 102, .7); }
-.share-btn.is-mail { background: #4f46e5; color: #fff; box-shadow: 0 10px 20px -10px rgba(79, 70, 229, .7); }
+.share-btn.is-mail { background: #1851ad; color: #fff; box-shadow: 0 10px 20px -10px rgba(24, 81, 173, .7); }
 .share-btn.is-copy { background: #f1f5f9; color: #475569; }
 .share-btn.is-copy:hover { background: #e2e8f0; }
 .share-btn.is-disabled { opacity: .45; pointer-events: none; }

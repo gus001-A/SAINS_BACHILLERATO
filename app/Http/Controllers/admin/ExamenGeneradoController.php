@@ -139,7 +139,7 @@ class ExamenGeneradoController extends Controller
         return \Inertia\Inertia::render('Admin/Examenes/Create', [
             'preguntas' => $this->preguntasParaSelector(),
             'areas' => AreaPregunta::orderBy('nombre')->get(['id', 'nombre']),
-            'tiposExamen' => ['Materia', 'Curso', 'Simulación'],
+            'tiposExamen' => ['Materia', 'Curso', 'Simulación', 'Certificado'],
         ]);
     }
 
@@ -330,7 +330,7 @@ class ExamenGeneradoController extends Controller
                 ],
                 'preguntas' => $this->preguntasParaSelector(),
                 'areas' => AreaPregunta::orderBy('nombre')->get(['id', 'nombre']),
-                'tiposExamen' => ['Materia', 'Curso', 'Simulación'],
+                'tiposExamen' => ['Materia', 'Curso', 'Simulación', 'Certificado'],
             ]);
 
         } catch (\Exception $e) {

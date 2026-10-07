@@ -25,23 +25,23 @@
         }
 
         .border {
-            border: 3px solid #4f46e5;
+            border: 3px solid #1851ad;
             padding: 3px;
         }
         .border-inner {
-            border: 1px solid #c7d2fe;
+            border: 1px solid #c5d5e9;
             padding: 46px 60px;
             text-align: center;
         }
 
-        .logo { width: 56px; height: auto; margin-bottom: 10px; }
+        .logo { width: 120px; height: auto; margin-bottom: 10px; }
 
         .kicker {
             font-size: 12px;
             font-weight: 700;
             letter-spacing: 3px;
             text-transform: uppercase;
-            color: #4f46e5;
+            color: #1851ad;
             margin-bottom: 18px;
         }
 
@@ -49,7 +49,7 @@
             font-size: 30px;
             font-weight: 800;
             letter-spacing: 1px;
-            color: #312e81;
+            color: #17325d;
             margin-bottom: 26px;
         }
 
@@ -108,7 +108,7 @@
         <div class="wrap-cell">
             <div class="border">
                 <div class="border-inner">
-                    <img src="{{ public_path('images/logo-sm.png') }}" class="logo" alt="SAINS">
+                    <img src="{{ public_path('images/bachillerato-nacional-sm.png') }}" class="logo" alt="Bachillerato Nacional SAINS">
                     <div class="kicker">SAINS &middot; BACHILLERATO</div>
                     <div class="title">CERTIFICADO DE FINALIZACIÓN DE BACHILLERATO</div>
 

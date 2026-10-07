@@ -1,13 +1,18 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import {
     FileTextOutlined, PlayCircleOutlined, RiseOutlined, TrophyFilled,
-    CheckCircleFilled, CloseCircleFilled, RightOutlined,
+    CheckCircleFilled, CloseCircleFilled, RightOutlined, RocketOutlined,
+    SafetyCertificateOutlined, LockOutlined,
 } from '@ant-design/icons-vue';
 import EstudianteLayout from '@/Layouts/EstudianteLayout.vue';
 import StatCard from '@/Components/StatCard.vue';
+
+const planActivo = computed(() => !!usePage().props.auth?.estudiante?.plan_activo);
+const TAMANOS = [50, 150, 250];
+const irPrueba = (n) => router.visit(route('estudiante.simulador', { preguntas: n }));
 
 const loading = ref(true);
 const stats = ref({});
@@ -27,7 +32,7 @@ const filtrados = computed(() => {
 // Últimos intentos para la mini-gráfica (del más antiguo al más reciente)
 const recientes = computed(() => [...examenes.value].slice(0, 8).reverse());
 
-const notaColor = (n) => (n >= 85 ? '#16a34a' : n >= 70 ? '#4f46e5' : n >= 50 ? '#d97706' : '#dc2626');
+const notaColor = (n) => (n >= 85 ? '#16a34a' : n >= 70 ? '#1851ad' : n >= 50 ? '#d97706' : '#dc2626');
 
 const cols = [
     { title: 'Examen', key: 'tipo' },
@@ -73,6 +78,32 @@ onMounted(async () => {
                 </div>
             </div>
         </section>
+
+        <div class="ex-modos">
+            <div class="ex-modo">
+                <span class="ex-modo__ic"><RocketOutlined /></span>
+                <div class="ex-modo__body">
+                    <h3>Examen de prueba</h3>
+                    <p>Practica cuantas veces quieras. Elige el tamaño del examen:</p>
+                    <div class="ex-modo__tams">
+                        <a-button v-for="n in TAMANOS" :key="n" @click="irPrueba(n)">{{ n }} preguntas</a-button>
+                    </div>
+                </div>
+            </div>
+            <div class="ex-modo ex-modo--cert">
+                <span class="ex-modo__ic"><SafetyCertificateOutlined /></span>
+                <div class="ex-modo__body">
+                    <h3>Examen para certificar</h3>
+                    <p>Examen final de <b>250 preguntas</b>. Tu resultado queda registrado para tu certificación.</p>
+                    <a-button v-if="planActivo" type="primary" @click="router.visit(route('estudiante.certificacion'))">
+                        Presentar examen
+                    </a-button>
+                    <a-button v-else @click="router.visit(route('estudiante.checkout'))">
+                        <template #icon><LockOutlined /></template>Disponible con el plan Premium
+                    </a-button>
+                </div>
+            </div>
+        </div>
 
         <a-spin :spinning="loading">
             <div class="sains-stats sains-stats--4 sains-stagger">
@@ -158,8 +189,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.hero-up { background: #fff !important; border-color: #fff !important; color: #4f46e5 !important; font-weight: 650; margin-top: 16px; }
-.hero-up:hover { background: #f1f0ff !important; }
+.hero-up { background: #fff !important; border-color: #fff !important; color: #1851ad !important; font-weight: 650; margin-top: 16px; }
+.hero-up:hover { background: #eef2f8 !important; }
 
 .ex-toolbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 
@@ -199,4 +230,20 @@ onMounted(async () => {
     font-variant-numeric: tabular-nums;
 }
 .ex-score i { font-size: 12px; font-style: normal; font-weight: 700; opacity: .7; margin-left: 1px; }
+.ex-modos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0 0 18px; }
+@media (max-width: 860px) { .ex-modos { grid-template-columns: 1fr; } }
+.ex-modo {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 20px; border-radius: 16px; background: #fff; border: 1px solid var(--sains-line);
+    box-shadow: var(--sains-shadow-sm);
+}
+.ex-modo--cert { border-color: #f5d27a; background: linear-gradient(135deg, #fffbeb, #fff 60%); }
+.ex-modo__ic {
+    flex: none; width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
+    font-size: 22px; color: #fff; background: var(--sains-grad);
+}
+.ex-modo--cert .ex-modo__ic { background: linear-gradient(135deg, #d99a00, #f5b301); }
+.ex-modo h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: #0f172a; }
+.ex-modo p { margin: 0 0 12px; font-size: 13px; color: #64748b; }
+.ex-modo__tams { display: flex; gap: 8px; flex-wrap: wrap; }
 </style>

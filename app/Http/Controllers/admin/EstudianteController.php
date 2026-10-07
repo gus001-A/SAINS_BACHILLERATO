@@ -43,6 +43,7 @@ class EstudianteController extends Controller
                         ? "{$c->codigo} — {$c->valor_descuento}%"
                         : "{$c->codigo} — \${$c->valor_descuento}",
                 ]),
+            ...\App\Support\DatosIssfam::catalogos(),
         ];
     }
 
@@ -60,7 +61,8 @@ class EstudianteController extends Controller
     {
         $edadMinima = now()->subYears(15)->format('Y-m-d');
 
-        $request->validate([
+        \App\Support\DatosIssfam::normalizar($request);
+        $request->validate(\App\Support\DatosIssfam::reglas(false) + [
             'email' => 'required|email|unique:usuario,correo',
             'password' => 'required|min:6|confirmed',
             'nombre' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúñÑÁÉÍÓÚ\s]+$/',
@@ -88,7 +90,7 @@ class EstudianteController extends Controller
             'telefono.required' => 'El teléfono es obligatorio',
             'telefono.regex' => 'El teléfono debe tener 10 dígitos (sin espacios ni guiones)',
             'telefono_casa.regex' => 'El teléfono de casa debe tener entre 7 y 10 dígitos',
-        ]);
+        ] + \App\Support\DatosIssfam::mensajes(), \App\Support\DatosIssfam::atributos());
 
         try {
             DB::beginTransaction();
@@ -128,7 +130,8 @@ class EstudianteController extends Controller
                 'plan_activo' => $request->boolean('plan_activo') || $cuponCubreTodo,
                 'cupon' => $codigoCupon,
                 'fecha_inscripcion' => now(),
-                'usuario' => $user->id
+                'usuario' => $user->id,
+                ...$request->only(\App\Support\DatosIssfam::CAMPOS),
             ]);
 
             if ($cupon) {
@@ -180,18 +183,23 @@ class EstudianteController extends Controller
         $sexo = $request->get('sexo');
         $plan_activo = $request->get('plan_activo');
 
+        $carreraId = $request->get('carrera_id');
+
         $estudiantes = User::where('rol', 'estudiante')
-            ->with('estudiante')
+            ->with('estudiante.carrera:id,nombre')
+            // Agrupado: sin el where(fn) el orWhereHas se saltaba el filtro de rol.
             ->when($search, function($query, $search) {
-                return $query->where('correo', 'LIKE', "%{$search}%")
+                return $query->where(fn ($w) => $w->where('correo', 'LIKE', "%{$search}%")
                     ->orWhereHas('estudiante', function($q) use ($search) {
                         $q->where('nombre', 'LIKE', "%{$search}%")
                           ->orWhere('paterno', 'LIKE', "%{$search}%")
                           ->orWhere('materno', 'LIKE', "%{$search}%")
                           ->orWhere('telefono', 'LIKE', "%{$search}%")
+                          ->orWhere('curp', 'LIKE', "%{$search}%")
                           ->orWhere('cupon', 'LIKE', "%{$search}%");
-                    });
+                    }));
             })
+            ->when($carreraId, fn ($query) => $query->whereHas('estudiante', fn ($q) => $q->where('carrera_id', $carreraId)))
             ->when($telefono, function($query, $telefono) {
                 return $query->whereHas('estudiante', function($q) use ($telefono) {
                     $q->where('telefono', 'LIKE', "%{$telefono}%")
@@ -251,6 +259,8 @@ class EstudianteController extends Controller
                 'documentos_aprobados' => $e ? ($docsAprobadosPorEstudiante[$e->id] ?? 0) : 0,
                 'documentos_requeridos' => $totalDocsRequeridos,
                 'sin_perfil' => $e === null,
+                'carrera' => $e?->carrera?->nombre,
+                'fecha_registro' => optional($e?->fecha_inscripcion)->format('Y-m-d'),
             ];
         });
 
@@ -267,7 +277,9 @@ class EstudianteController extends Controller
                 'telefono' => $telefono,
                 'sexo' => $sexo,
                 'plan_activo' => $plan_activo === null || $plan_activo === '' ? null : (int) $plan_activo,
+                'carrera_id' => $carreraId,
             ],
+            'carreras' => \App\Models\CarreraBachillerato::opciones(),
         ]);
     }
 
@@ -287,8 +299,15 @@ class EstudianteController extends Controller
             ->findOrFail($id);
 
         if (!$user->estudiante) {
-            return redirect()->route('admin.estudiantes.index')
-                ->with('error', 'Estudiante no encontrado');
+            // Se registró pero nunca completó su perfil: se muestra una ficha
+            // mínima para que el administrador pueda eliminar la cuenta.
+            return \Inertia\Inertia::render('Admin/Estudiantes/Incompleto', [
+                'usuario' => [
+                    'id' => $user->id,
+                    'correo' => $user->correo,
+                    'con_google' => !empty($user->google_id),
+                ],
+            ]);
         }
 
         $estudiante = $user->estudiante;
@@ -518,9 +537,15 @@ class EstudianteController extends Controller
                 'fecha_inscripcion' => optional($estudiante->fecha_inscripcion)->format('Y-m-d'),
                 'plan_activo' => (bool) $estudiante->plan_activo,
                 'cupon' => $estudiante->cupon,
+                'carrera' => $estudiante->carrera?->nombre,
+                'curp' => $estudiante->curp,
+                'domicilio' => collect([$estudiante->calle_numero, $estudiante->colonia,
+                    $estudiante->codigo_postal ? 'C.P. ' . $estudiante->codigo_postal : null,
+                    $estudiante->municipio, $estudiante->entidad_federativa])->filter()->implode(', ') ?: null,
+                'ediciones_datos' => $estudiante->candadoEdiciones(),
                 'escuela' => $estudiante->escuelaProcedencia?->centro_educativo,
                 'universidad' => $estudiante->universidadInteres?->clave,
-                'foto_url' => $estudiante->foto ? \Illuminate\Support\Facades\Storage::url($estudiante->foto) : null,
+                'foto_url' => $estudiante->foto ? \App\Support\ArchivoUrl::foto($estudiante) : null,
                 'certificado_generado' => (bool) $estudiante->certificado_path,
                 'certificado_generado_en' => optional($estudiante->certificado_generado_en)->format('d/m/Y H:i'),
             ],
@@ -541,13 +566,35 @@ class EstudianteController extends Controller
                 'dia' => is_object($d) ? $d->dia : $d['dia'],
                 'horas' => is_object($d) ? $d->horas_estudiadas : $d['horas_estudiadas'],
             ])->values(),
-            'examenes' => collect($examenes)->take(15)->map(fn ($e) => [
+            'examenes' => collect($examenes)->take(50)->map(fn ($e) => [
                 'id' => $e->id ?? null,
                 'tipo' => $e->tipo_examen ?? 'Simulador',
                 'calificacion' => round($e->calificacion ?? 0, 1),
+                ...$this->aciertosExamen($e),
+                'intento' => $e->intento,
                 'fecha' => isset($e->fecha_fin) && $e->fecha_fin ? Carbon::parse($e->fecha_fin)->format('d/m/Y') : null,
             ])->values(),
         ]);
+    }
+
+    /** Aciertos / total de un examen realizado, leídos del JSON de respuestas. */
+    private function aciertosExamen($examen): array
+    {
+        $raw = $examen->respuestas;
+        if (is_string($raw)) {
+            $raw = json_decode($raw, true);
+        }
+        $lista = is_array($raw) ? ($raw['respuestas'] ?? $raw) : [];
+        $lista = array_values(array_filter($lista, 'is_array'));
+
+        $aciertos = collect($lista)->filter(fn ($r) => ($r['estatus'] ?? null) === 'correcta'
+            || (($r['correcta'] ?? false) === true))->count();
+
+        return [
+            'aciertos' => $aciertos,
+            'total_preguntas' => count($lista),
+            'corregido' => !empty($raw['ediciones'] ?? null),
+        ];
     }
 
     /**
@@ -622,8 +669,8 @@ class EstudianteController extends Controller
         $user = User::with(['estudiante.escuelaProcedencia', 'estudiante.universidadInteres'])->findOrFail($id);
 
         if (!$user->estudiante) {
-            return redirect()->route('admin.estudiantes.index')
-                ->with('error', 'Este usuario no es un estudiante válido');
+            return redirect()->route('admin.estudiantes.show', $user->id)
+                ->with('error', 'Este usuario no completó su registro; no hay datos de estudiante que editar.');
         }
 
         $estudiante = $user->estudiante;
@@ -696,6 +743,8 @@ class EstudianteController extends Controller
                 'universidad_interes' => $estudiante->universidad_interes,
                 'plan_activo' => (bool) $estudiante->plan_activo,
                 'cupon' => $estudianteData->cupon,
+                ...\App\Support\DatosIssfam::valores($estudiante),
+                'candado' => $estudiante->candadoEdiciones(),
             ],
             'opciones' => $this->opcionesFormulario(),
         ]);
@@ -716,7 +765,9 @@ class EstudianteController extends Controller
 
         $edadMinima = now()->subYears(15)->format('Y-m-d');
 
-        $request->validate([
+        \App\Support\DatosIssfam::normalizar($request);
+        $request->validate(\App\Support\DatosIssfam::reglas(false, $estudiante->id) + [
+            'reiniciar_candado' => 'boolean',
             'nombre' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúñÑÁÉÍÓÚ\s]+$/',
             'paterno' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúñÑÁÉÍÓÚ\s]+$/',
             'materno' => 'nullable|string|max:100|regex:/^[a-zA-ZáéíóúñÑÁÉÍÓÚ\s]+$/',
@@ -730,7 +781,7 @@ class EstudianteController extends Controller
             'password' => 'nullable|min:6|confirmed',
         ], [
             'fecha_nacimiento.before_or_equal' => 'El estudiante debe tener al menos 15 años.',
-        ]);
+        ] + \App\Support\DatosIssfam::mensajes(), \App\Support\DatosIssfam::atributos());
 
         try {
             DB::beginTransaction();
@@ -775,6 +826,12 @@ class EstudianteController extends Controller
                 'telefono_casa' => $request->telefono_casa,
                 'plan_activo' => $request->boolean('plan_activo'),
                 'cupon' => $codigoCupon,
+                ...$request->only(\App\Support\DatosIssfam::CAMPOS),
+                // Lo que edita el administrador no cuenta para el candado del alumno;
+                // además puede devolverle sus cambios si los agotó.
+                ...($request->boolean('reiniciar_candado')
+                    ? ['ediciones_total' => 0, 'ediciones_dia' => 0, 'ediciones_fecha' => null]
+                    : []),
             ]);
 
             DB::commit();
@@ -804,38 +861,55 @@ class EstudianteController extends Controller
     {
         try {
             $user = User::with('estudiante')->findOrFail($id);
+
+            if ($user->rol !== 'estudiante') {
+                return redirect()->route('admin.estudiantes.index')
+                    ->with('error', 'Este usuario no es un estudiante.');
+            }
+
             $estudiante = $user->estudiante;
+            $archivos = [];
 
             DB::beginTransaction();
 
             if ($estudiante) {
                 $nombre = trim($estudiante->nombre . ' ' . $estudiante->paterno) ?: $user->correo;
 
-                // Los registros relacionados (documentos, pagos, exámenes, etc.) se
-                // eliminan en cascada en la BD; los archivos físicos no, así que se
-                // borran aquí para no dejarlos huérfanos en el disco.
-                DocumentoEstudiante::delEstudiante($estudiante->id)->get()->each(function ($doc) {
-                    if ($doc->archivo) {
-                        Storage::disk('public')->delete($doc->archivo);
-                    }
-                });
-                if ($estudiante->certificado_path) {
-                    Storage::disk('public')->delete($estudiante->certificado_path);
-                }
-                if ($estudiante->foto) {
-                    Storage::disk('public')->delete($estudiante->foto);
-                }
+                $archivos = DocumentoEstudiante::delEstudiante($estudiante->id)->pluck('archivo')
+                    ->push($estudiante->certificado_path, $estudiante->foto)
+                    ->filter()->all();
+
+                // Se borra explícitamente lo que cuelga del estudiante en vez de
+                // confiar en el ON DELETE CASCADE: en producción la BD se importó
+                // de un dump y no todas las llaves foráneas lo tienen.
+                $this->borrarSiExiste('documento_estudiante', 'estudiante_id', $estudiante->id);
+                $this->borrarSiExiste('examen_realizado', 'estudiante', $estudiante->id);
+                $this->borrarSiExiste('progreso_videos', 'estudiante_id', $estudiante->id);
+                $this->borrarSiExiste('tiempo_estudio', 'estudiante_id', $estudiante->id);
+                $this->borrarSiExiste('pagos', 'alumno_pago', $estudiante->id);
+                $estudiante->delete();
             } else {
                 // Usuario que nunca completó su registro (sin perfil de estudiante).
                 $nombre = $user->correo;
+            }
+
+            $this->borrarSiExiste('notificaciones', 'id_usuario', $user->id);
+            $this->borrarSiExiste('interacciones_call_center', 'id_estudiante', $user->id);
+            $this->borrarSiExiste('sessions', 'user_id', $user->id);
+            if (\Illuminate\Support\Facades\Schema::hasColumn('cupones', 'usuario_uso')) {
+                DB::table('cupones')->where('usuario_uso', $user->id)->update(['usuario_uso' => null]);
             }
 
             $user->delete();
 
             DB::commit();
 
+            // Los archivos se borran hasta que la BD confirmó, para no perderlos
+            // si la transacción se revierte.
+            Storage::disk('public')->delete($archivos);
+
             return redirect()->route('admin.estudiantes.index')
-                ->with('success', "Estudiante {$nombre} eliminado exitosamente");
+                ->with('success', $estudiante ? "Estudiante {$nombre} eliminado exitosamente" : "Usuario {$nombre} eliminado exitosamente");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -843,6 +917,13 @@ class EstudianteController extends Controller
 
             return redirect()->back()
                 ->with('error', 'Ocurrió un error al eliminar el estudiante: ' . $e->getMessage());
+        }
+    }
+
+    private function borrarSiExiste(string $tabla, string $columna, $valor): void
+    {
+        if (\Illuminate\Support\Facades\Schema::hasTable($tabla)) {
+            DB::table($tabla)->where($columna, $valor)->delete();
         }
     }
 
@@ -1334,8 +1415,8 @@ class EstudianteController extends Controller
 
             Mail::html($htmlCorreo, function ($message) use ($user, $nombreCompleto, $pdfBytes, $nombreArchivo) {
                 $message->to($user->correo, $nombreCompleto)
-                    ->subject('🎓 Tu certificado de finalización | SAINS Educación')
-                    ->from(config('mail.from.address', 'sains.ingreso@gmail.com'), 'SAINS Educación')
+                    ->subject('🎓 Tu certificado de finalización | SAINS Bachillerato')
+                    ->from(config('mail.from.address', 'sains.bachillerato@gmail.com'), 'SAINS Bachillerato · ISSFAM')
                     ->attachData($pdfBytes, $nombreArchivo, ['mime' => 'application/pdf']);
             });
         } catch (\Exception $e) {
@@ -1567,8 +1648,8 @@ class EstudianteController extends Controller
 
             Mail::html($htmlContent, function ($message) use ($correoEstudiante, $nombreCompleto, $tipoLabel) {
                 $message->to($correoEstudiante, $nombreCompleto)
-                        ->subject("✅ Tu {$tipoLabel} fue aprobado | SAINS Educación")
-                        ->from(config('mail.from.address', 'sains.ingreso@gmail.com'), 'SAINS Educación');
+                        ->subject("✅ Tu {$tipoLabel} fue aprobado | SAINS Bachillerato")
+                        ->from(config('mail.from.address', 'sains.bachillerato@gmail.com'), 'SAINS Bachillerato · ISSFAM');
             });
 
             Log::info('📧 [Documento] Correo de APROBACIÓN enviado a: ' . $correoEstudiante . ' (' . $tipoLabel . ')');
@@ -1625,8 +1706,8 @@ class EstudianteController extends Controller
 
             Mail::html($htmlContent, function ($message) use ($correoEstudiante, $nombreCompleto, $tipoLabel) {
                 $message->to($correoEstudiante, $nombreCompleto)
-                        ->subject("⚠️ Tu {$tipoLabel} necesita una corrección | SAINS Educación")
-                        ->from(config('mail.from.address', 'sains.ingreso@gmail.com'), 'SAINS Educación');
+                        ->subject("⚠️ Tu {$tipoLabel} necesita una corrección | SAINS Bachillerato")
+                        ->from(config('mail.from.address', 'sains.bachillerato@gmail.com'), 'SAINS Bachillerato · ISSFAM');
             });
 
             Log::info('📧 [Documento] Correo de RECHAZO enviado a: ' . $correoEstudiante . ' (' . $tipoLabel . ')');

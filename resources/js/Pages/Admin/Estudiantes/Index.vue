@@ -12,13 +12,21 @@ const props = defineProps({
     estudiantes: { type: Object, required: true },
     stats: { type: Object, required: true },
     filters: { type: Object, default: () => ({}) },
+    carreras: { type: Array, default: () => [] },
 });
+
+function fecha(iso) {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+}
 
 const state = reactive({
     search: props.filters.search ?? '',
     telefono: props.filters.telefono ?? '',
     sexo: props.filters.sexo ?? undefined,
     plan_activo: props.filters.plan_activo ?? undefined,
+    carrera_id: props.filters.carrera_id ? Number(props.filters.carrera_id) : undefined,
 });
 
 let debounce = null;
@@ -28,14 +36,15 @@ function reload(extra = {}) {
         telefono: state.telefono || undefined,
         sexo: state.sexo || undefined,
         plan_activo: state.plan_activo ?? undefined,
+        carrera_id: state.carrera_id || undefined,
         ...extra,
     }, { preserveState: true, replace: true, preserveScroll: true });
 }
 watch([() => state.search, () => state.telefono], () => { clearTimeout(debounce); debounce = setTimeout(() => reload(), 350); });
-watch([() => state.sexo, () => state.plan_activo], () => reload());
+watch([() => state.sexo, () => state.plan_activo, () => state.carrera_id], () => reload());
 
 function eliminar(r) {
-    confirmDelete({ title: '¿Eliminar estudiante?', content: r.nombre_completo, onOk: () => router.delete(route('admin.estudiantes.destroy', r.id), { preserveScroll: true }) });
+    confirmDelete({ title: r.sin_perfil ? '¿Eliminar usuario?' : '¿Eliminar estudiante?', content: r.sin_perfil ? `${r.correo} no terminó su registro. Se eliminará su cuenta.` : r.nombre_completo, onOk: () => router.delete(route('admin.estudiantes.destroy', r.id), { preserveScroll: true }) });
 }
 
 const pagination = computed(() => ({
@@ -51,6 +60,8 @@ const columns = [
     { title: 'Estudiante', key: 'nombre' },
     { title: 'Correo', key: 'correo', width: 220 },
     { title: 'Teléfono', dataIndex: 'telefono', key: 'telefono', width: 130 },
+    { title: 'Carrera', key: 'carrera', width: 190 },
+    { title: 'Fecha de registro', key: 'registro', width: 140, align: 'center' },
     { title: 'Documentos', key: 'documentos', width: 150, align: 'center' },
     { title: 'Plan', key: 'plan', width: 120 },
     { title: '', key: 'acciones', width: 130, align: 'right' },
@@ -78,7 +89,7 @@ const columns = [
         </div>
 
         <a-card :bordered="false">
-            <a-table class="filtered-table" :columns="columns" :data-source="estudiantes.data" :pagination="pagination" row-key="id" size="middle" :scroll="{ x: 1000 }" @change="onChange">
+            <a-table class="filtered-table" :columns="columns" :data-source="estudiantes.data" :pagination="pagination" row-key="id" size="middle" :scroll="{ x: 1300 }" @change="onChange">
                 <template #summary>
                     <a-table-summary-row>
                         <a-table-summary-cell v-for="(col, i) in columns" :key="col.key ?? i" :index="i">
@@ -88,6 +99,8 @@ const columns = [
                             <a-input v-else-if="col.key === 'telefono'" v-model:value="state.telefono" size="small" allow-clear placeholder="Teléfono…">
                                 <template #prefix><SearchOutlined /></template>
                             </a-input>
+                            <a-select v-else-if="col.key === 'carrera'" v-model:value="state.carrera_id" size="small" allow-clear placeholder="Todas"
+                                style="width: 100%" :options="carreras" />
                             <a-select v-else-if="col.key === 'plan'" v-model:value="state.plan_activo" size="small" allow-clear placeholder="Todos"
                                 :options="[{ value: 1, label: 'Activo' }, { value: 0, label: 'Sin plan' }]" />
                         </a-table-summary-cell>
@@ -101,6 +114,12 @@ const columns = [
                     </template>
                     <template v-else-if="column.key === 'correo'">{{ record.correo }}</template>
                     <template v-else-if="column.key === 'telefono'">{{ record.telefono || '—' }}</template>
+                    <template v-else-if="column.key === 'carrera'">
+                        <span v-if="record.carrera">{{ record.carrera }}</span>
+                        <a-tag v-else-if="!record.sin_perfil" color="gold">Sin carrera</a-tag>
+                        <span v-else>—</span>
+                    </template>
+                    <template v-else-if="column.key === 'registro'">{{ fecha(record.fecha_registro) }}</template>
                     <template v-else-if="column.key === 'documentos'">
                         <a-tag :color="record.documentos_aprobados === record.documentos_requeridos ? 'green' : record.documentos_aprobados > 0 ? 'blue' : 'default'">
                             {{ record.documentos_aprobados }} / {{ record.documentos_requeridos }}
@@ -113,7 +132,7 @@ const columns = [
                     <template v-else-if="column.key === 'acciones'">
                         <RowActions
                             :view-href="route('admin.estudiantes.show', record.id)"
-                            :edit-href="route('admin.estudiantes.edit', record.id)"
+                            :edit-href="record.sin_perfil ? null : route('admin.estudiantes.edit', record.id)"
                             @delete="eliminar(record)"
                         />
                     </template>

@@ -271,7 +271,7 @@ const columns = [
     position: relative; flex: none; width: 58px; height: 34px; border-radius: 8px; overflow: hidden;
     border: 0; padding: 0; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff;
+    background: linear-gradient(135deg, #1664db, #3469eb); color: #fff;
 }
 .vid-row__thumb img { width: 100%; height: 100%; object-fit: cover; }
 .vid-row__play {

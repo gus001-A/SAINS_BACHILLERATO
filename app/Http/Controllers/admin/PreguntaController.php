@@ -83,6 +83,8 @@ class PreguntaController extends Controller
         return \Inertia\Inertia::render('Admin/Preguntas/Index', [
             'preguntas' => $preguntas,
             'areas' => AreaPregunta::orderBy('nombre')->get(['id', 'nombre']),
+            'examenes' => \App\Models\ExamenGenerado::withCount('preguntas')->orderByDesc('id')->get(['id', 'tipo_examen'])
+                ->map(fn ($e) => ['value' => $e->id, 'label' => "{$e->tipo_examen} #{$e->id} · {$e->preguntas_count} preguntas"]),
             'stats' => [
                 'total' => Pregunta::count(),
                 'areas' => AreaPregunta::count(),
@@ -266,36 +268,121 @@ class PreguntaController extends Controller
         return Excel::download(new PreguntasExport(), 'preguntas-' . now()->format('Y-m-d') . '.csv', ExcelFormat::CSV);
     }
 
-    // Cargar preguntas desde un archivo Excel o CSV (crea nuevas o actualiza si la columna ID coincide)
-    public function importar(Request $request)
+    // Plantilla vacía con ejemplos + hoja de instrucciones
+    public function plantilla()
+    {
+        return Excel::download(new \App\Exports\PlantillaPreguntasExport(), 'plantilla-preguntas.xlsx', ExcelFormat::XLSX);
+    }
+
+    /**
+     * Paso 1: analiza el archivo SIN guardar y devuelve la vista previa (JSON).
+     * El archivo se guarda temporalmente y se identifica con un token para el paso 2.
+     */
+    public function analizarImportacion(Request $request)
     {
         $request->validate([
-            'archivo' => 'required|file|mimes:xlsx,xls,csv,txt',
+            'archivo' => 'required|file|max:10240|mimes:xlsx,xls,csv,txt',
+        ], ['archivo.max' => 'El archivo no puede pesar más de 10 MB.']);
+
+        // Limpia vistas previas que nunca se confirmaron (más de un día).
+        $disco = \Illuminate\Support\Facades\Storage::disk('local');
+        foreach ($disco->files('importaciones') as $viejo) {
+            if ($disco->lastModified($viejo) < now()->subDay()->getTimestamp()) {
+                $disco->delete($viejo);
+            }
+        }
+
+        $archivo = $request->file('archivo');
+        $ext = strtolower($archivo->getClientOriginalExtension()) ?: 'xlsx';
+        $token = (string) \Illuminate\Support\Str::uuid();
+        $ruta = $archivo->storeAs('importaciones', "{$token}.{$ext}", 'local');
+
+        try {
+            $analisis = (new PreguntasImport())->analizar($ruta, 'local', $this->tipoExcel($ext));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($ruta);
+            Log::error('Error al analizar preguntas: ' . $e->getMessage());
+
+            return response()->json(['message' => 'No se pudo leer el archivo. Revisa que sea un Excel o CSV válido.'], 422);
+        }
+
+        if ($analisis['resumen']['total'] === 0) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($ruta);
+
+            return response()->json(['message' => 'El archivo no tiene preguntas.'], 422);
+        }
+
+        return response()->json([
+            'token' => "{$token}.{$ext}",
+            'nombre' => $archivo->getClientOriginalName(),
+            'resumen' => $analisis['resumen'],
+            'columnas' => $analisis['columnas'],
+            // Para no mandar archivos enormes al navegador, la vista previa muestra hasta 1000 filas.
+            'filas' => collect($analisis['filas'])->take(1000)->map(fn ($f) => [
+                'fila' => $f['fila'],
+                'estado' => $f['estado'],
+                'motivo' => $f['motivo'],
+                'area' => $f['area'],
+                'area_nueva' => $f['area_nueva'] ?? false,
+                'pregunta' => $f['pregunta'],
+                'opciones' => count($f['opciones']),
+                'correcta' => $f['correcta'] ? ($f['opciones'][$f['correcta']] ?? null) : null,
+                'letra' => $f['correcta'],
+            ])->values(),
         ]);
+    }
+
+    /** Paso 2: guarda las filas válidas del archivo analizado. */
+    public function importar(Request $request)
+    {
+        $datos = $request->validate([
+            'token' => ['required', 'string', 'regex:/^[0-9a-f\-]{36}\.(xlsx|xls|csv|txt)$/'],
+            'omitir_duplicadas' => ['boolean'],
+            'examen_id' => ['nullable', 'exists:examen_generado,id'],
+        ]);
+
+        $ruta = 'importaciones/' . $datos['token'];
+        $disco = \Illuminate\Support\Facades\Storage::disk('local');
+        if (!$disco->exists($ruta)) {
+            return redirect()->route('admin.preguntas.index')
+                ->with('error', 'La vista previa expiró. Vuelve a subir el archivo.');
+        }
 
         try {
             $import = new PreguntasImport();
-            $tipo = strtolower($request->file('archivo')->getClientOriginalExtension()) === 'csv' ? ExcelFormat::CSV : ExcelFormat::XLSX;
-            Excel::import($import, $request->file('archivo'), null, $tipo);
-
-            $partes = [];
-            if ($import->creadas > 0) $partes[] = "{$import->creadas} creada(s)";
-            if ($import->actualizadas > 0) $partes[] = "{$import->actualizadas} actualizada(s)";
-            $resumen = $partes ? implode(' · ', $partes) : 'No se importó ninguna pregunta nueva';
-
-            if ($import->errores) {
-                $detalle = implode(' | ', array_slice($import->errores, 0, 5));
-                $extra = count($import->errores) > 5 ? ' (y ' . (count($import->errores) - 5) . ' más)' : '';
-                return redirect()->route('admin.preguntas.index')
-                    ->with('warning', "{$resumen}. Filas con errores: {$detalle}{$extra}");
-            }
-
-            return redirect()->route('admin.preguntas.index')->with('success', "Importación completa: {$resumen}.");
-        } catch (\Exception $e) {
+            $ext = pathinfo($ruta, PATHINFO_EXTENSION);
+            $analisis = $import->analizar($ruta, 'local', $this->tipoExcel($ext));
+            $r = $import->guardar($analisis, $request->boolean('omitir_duplicadas', true), $datos['examen_id'] ?? null);
+        } catch (\Throwable $e) {
             Log::error('Error al importar preguntas: ' . $e->getMessage());
+
             return redirect()->route('admin.preguntas.index')
                 ->with('error', 'Error al importar el archivo: ' . $e->getMessage());
+        } finally {
+            $disco->delete($ruta);
         }
+
+        $partes = array_filter([
+            $r['creadas'] ? "{$r['creadas']} creada(s)" : null,
+            $r['actualizadas'] ? "{$r['actualizadas']} actualizada(s)" : null,
+            $r['omitidas'] ? "{$r['omitidas']} duplicada(s) omitida(s)" : null,
+            $r['errores'] ? "{$r['errores']} fila(s) con error sin importar" : null,
+        ]);
+        $mensaje = 'Importación completa: ' . ($partes ? implode(' · ', $partes) : 'no hubo cambios') . '.';
+        if ($r['examen']) {
+            $mensaje .= " Se agregaron al examen {$r['examen']}.";
+        }
+
+        return redirect()->route('admin.preguntas.index')->with($r['errores'] ? 'warning' : 'success', $mensaje);
+    }
+
+    private function tipoExcel(string $ext): string
+    {
+        return match (strtolower($ext)) {
+            'csv', 'txt' => ExcelFormat::CSV,
+            'xls' => ExcelFormat::XLS,
+            default => ExcelFormat::XLSX,
+        };
     }
 
     // ==================== MÉTODOS ADICIONALES ÚTILES ====================

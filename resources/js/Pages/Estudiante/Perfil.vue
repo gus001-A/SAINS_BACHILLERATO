@@ -5,17 +5,31 @@ import axios from 'axios';
 import {
     UserOutlined, UploadOutlined, DeleteOutlined,
     FilePdfOutlined, CheckCircleOutlined, ClockCircleOutlined,
-    CloseCircleOutlined, EyeOutlined, LockOutlined,
+    CloseCircleOutlined, EyeOutlined, LockOutlined, PlayCircleFilled,
+    ArrowRightOutlined, InfoCircleOutlined, CameraOutlined, MailOutlined,
+    IdcardOutlined, HomeOutlined, KeyOutlined, SaveOutlined, CrownFilled,
+    CloseOutlined,
 } from '@ant-design/icons-vue';
 import EstudianteLayout from '@/Layouts/EstudianteLayout.vue';
 import PhoneInput from '@/Components/PhoneInput.vue';
 import DateField from '@/Components/DateField.vue';
 import ModalDocumentos from '@/Components/ModalDocumentos.vue';
+import CamposIssfam from '@/Components/CamposIssfam.vue';
 import { message, confirmAction } from '@/lib/notify';
 
 const props = defineProps({
     estudianteData: { type: Object, required: true },
     universidades: { type: Array, default: () => [] },
+    carreras: { type: Array, default: () => [] },
+    entidades: { type: Array, default: () => [] },
+    candado: { type: Object, required: true },
+    videoDocumentos: {
+        type: Object,
+        default: () => ({
+            tipo: 'video',
+            src: '/videos/DOCUMENTOS_SAINS.mp4',
+        }),
+    },
 });
 
 const d = props.estudianteData;
@@ -24,8 +38,24 @@ const perfil = reactive({
     nombre: d.nombre ?? '', paterno: d.paterno ?? '', materno: d.materno ?? '',
     telefono: d.telefono ?? '', fecha_nacimiento: d.fecha_nacimiento ?? null,
     sexo: d.sexo ?? undefined, correo: d.correo ?? '',
+    carrera_id: d.carrera_id ?? undefined, curp: d.curp ?? '', calle_numero: d.calle_numero ?? '',
+    colonia: d.colonia ?? '', codigo_postal: d.codigo_postal ?? '', municipio: d.municipio ?? '',
+    entidad_federativa: d.entidad_federativa ?? undefined,
 });
 const perfilErrors = ref({});
+const perfilForm = perfil;
+Object.defineProperty(perfilForm, 'errors', {
+    enumerable: false,
+    get: () => Object.fromEntries(Object.entries(perfilErrors.value).map(([k, v]) => [k, v?.[0]])),
+});
+
+const candado = ref({ ...props.candado });
+const bloqueado = computed(() => candado.value.bloqueado);
+
+const videoOpen = ref(false);
+const tab = ref('datos');
+const carreraNombre = computed(() => props.carreras.find((c) => c.value === perfil.carrera_id)?.label ?? null);
+const iniciales = computed(() => `${perfil.nombre?.[0] ?? ''}${perfil.paterno?.[0] ?? ''}`.toUpperCase() || 'E');
 const guardando = ref(false);
 
 const pass = reactive({ password_actual: '', password_nueva: '', password_nueva_confirmation: '' });
@@ -35,9 +65,6 @@ const cambiandoPass = ref(false);
 const fotoUrl = ref(d.foto_url);
 const subiendoFoto = ref(false);
 
-/* =========================================================
-   DOCUMENTOS
-   ========================================================= */
 const TIPOS = [
     { value: 'acta_nacimiento',        label: 'Acta de nacimiento',        hint: 'PDF · máx. 5 MB' },
     { value: 'curp',                    label: 'CURP',                       hint: 'PDF · máx. 5 MB' },
@@ -49,7 +76,6 @@ const documentos = ref({});
 const subiendoDoc = ref({});
 const cargandoDocs = ref(true);
 
-/* Estado del modal (controlado desde aquí y pasado al componente) */
 const pdfModal = ref(false);
 const pdfActivo = ref(null);
 
@@ -61,12 +87,6 @@ function estatusMeta(estatus) {
     }
 }
 
-/**
- * ✅ Regla de negocio para el ESTUDIANTE:
- *  - APROBADO → es final, ya no puede reemplazar ni eliminar.
- *  - RECHAZADO → puede reemplazar y eliminar para corregir.
- *  - PENDIENTE → puede reemplazar y eliminar (por si se equivocó al subir).
- */
 function estaAprobadoFinal(doc) {
     return doc && doc.estatus === 'aprobado';
 }
@@ -97,7 +117,6 @@ async function cargarDocumentos() {
 function subirDocumento(tipo, file) {
     const docActual = documentos.value[tipo];
 
-    // Guarda: no permitir reemplazar si ya está aprobado
     if (estaAprobadoFinal(docActual)) {
         message.warning('Este documento ya fue aprobado y no se puede reemplazar.');
         return false;
@@ -183,14 +202,26 @@ const tipoLabelActivo = computed(() => {
 
 onMounted(cargarDocumentos);
 
-/* =========================================================
-   PERFIL / FOTO / PASSWORD
-   ========================================================= */
-async function guardarPerfil() {
+function guardarPerfil() {
+    if (bloqueado.value) {
+        message.warning(candado.value.motivo);
+        return;
+    }
+    confirmAction({
+        title: '¿Guardar tus datos?',
+        content: `Si hay cambios, contarán como 1 de tus ${candado.value.max_total} cambios permitidos ` +
+            `(te quedan ${candado.value.restantes_total} en total y ${candado.value.restantes_hoy} hoy).`,
+        okText: 'Sí, guardar',
+        onOk: enviarPerfil,
+    });
+}
+
+async function enviarPerfil() {
     guardando.value = true;
     perfilErrors.value = {};
     try {
-        const { data } = await axios.put(route('estudiante.perfil.actualizar'), perfil);
+        const { data } = await axios.put(route('estudiante.perfil.actualizar'), { ...perfil });
+        if (data.candado) candado.value = data.candado;
         if (data.success) {
             message.success(data.message || 'Perfil actualizado');
             router.reload({ only: ['auth'] });
@@ -198,11 +229,16 @@ async function guardarPerfil() {
             message.error(data.message || 'No se pudo actualizar');
         }
     } catch (e) {
+        if (e.response?.data?.candado) candado.value = e.response.data.candado;
         if (e.response?.status === 422) perfilErrors.value = e.response.data.errors || {};
         message.error(e.response?.data?.message || 'Error al actualizar el perfil');
     } finally {
         guardando.value = false;
     }
+}
+
+function continuar() {
+    router.visit(route('estudiante.dashboard'));
 }
 
 async function cambiarPassword() {
@@ -282,227 +318,280 @@ const err = (bag, k) => (bag && bag[k] ? bag[k][0] : '');
 
 <template>
     <EstudianteLayout title="Mi perfil">
-        <section class="sains-hero">
-            <div class="sains-hero__grid">
-                <div>
-                    <span class="sains-hero__eyebrow"><UserOutlined /> Mi cuenta</span>
-                    <h1 class="sains-hero__title">{{ perfil.nombre }} {{ perfil.paterno }}</h1>
-                    <p class="sains-hero__sub">Administra tus datos personales, tu foto, tu contraseña y tus documentos.</p>
+        <!-- ==================== ENCABEZADO: foto + datos + candado ==================== -->
+        <section class="pf-hero">
+            <div class="pf-hero__foto">
+                <a-avatar :src="fotoUrl || undefined" :size="88" class="pf-hero__avatar">
+                    <template v-if="!fotoUrl">{{ iniciales }}</template>
+                </a-avatar>
+                <a-upload :before-upload="subirFoto" :show-upload-list="false" accept="image/*">
+                    <a-tooltip title="Cambiar foto">
+                        <button type="button" class="pf-hero__cam" :disabled="subiendoFoto" aria-label="Cambiar foto">
+                            <CameraOutlined />
+                        </button>
+                    </a-tooltip>
+                </a-upload>
+            </div>
+
+            <div class="pf-hero__info">
+                <span class="pf-hero__eyebrow"><UserOutlined /> Mi cuenta</span>
+                <h1 class="pf-hero__name">{{ perfil.nombre }} {{ perfil.paterno }} {{ perfil.materno }}</h1>
+                <div class="pf-hero__meta">
+                    <span><MailOutlined /> {{ perfil.correo }}</span>
+                    <span v-if="carreraNombre" class="pf-chip"><i class="fas fa-graduation-cap"></i> {{ carreraNombre }}</span>
+                    <span class="pf-chip" :class="{ 'pf-chip--gold': estudianteData.plan_activo }">
+                        <CrownFilled v-if="estudianteData.plan_activo" /> {{ estudianteData.plan_activo ? 'Plan Premium' : 'Plan básico' }}
+                    </span>
+                    <a v-if="fotoUrl" class="pf-hero__quitar" @click="eliminarFoto">Quitar foto</a>
                 </div>
+            </div>
+
+            <div class="pf-hero__side">
+                <a-tooltip :title="bloqueado ? candado.motivo : `Puedes cambiar tus datos ${candado.max_dia} veces por día y ${candado.max_total} en total`">
+                    <div class="pf-lock" :class="{ 'is-lock': bloqueado }">
+                        <div class="pf-lock__top"><LockOutlined /> Candado de datos</div>
+                        <div class="pf-lock__bar">
+                            <span v-for="i in candado.max_total" :key="i" :class="{ used: i <= candado.total }"></span>
+                        </div>
+                        <small>{{ bloqueado ? 'Bloqueado' : `${candado.restantes_total} de ${candado.max_total} cambios · ${candado.restantes_hoy} hoy` }}</small>
+                    </div>
+                </a-tooltip>
+                <a-button type="primary" size="large" class="pf-hero__cont" @click="continuar">
+                    Continuar <ArrowRightOutlined />
+                </a-button>
             </div>
         </section>
 
-        <a-row :gutter="[16, 16]">
-            <!-- ==================== COLUMNA IZQUIERDA ==================== -->
-            <a-col :xs="24" :md="8">
-                <a-card :bordered="false" class="perfil-foto">
-                    <div class="perfil-foto__cover"></div>
-                    <div class="perfil-foto__avatar">
-                        <a-avatar :src="fotoUrl" :size="96">
-                            <template v-if="!fotoUrl" #icon><UserOutlined /></template>
-                        </a-avatar>
-                    </div>
-                    <h3>{{ perfil.nombre }} {{ perfil.paterno }}</h3>
-                    <p class="perfil-foto__mail">{{ perfil.correo }}</p>
-                    <a-tag :color="estudianteData.plan_activo ? 'green' : 'default'" style="margin-bottom: 4px">
-                        {{ estudianteData.plan_activo ? 'Plan Premium activo' : 'Plan básico' }}
-                    </a-tag>
-                    <a-space direction="vertical" style="width: 100%; margin-top: 14px">
-                        <a-upload :before-upload="subirFoto" :show-upload-list="false" accept="image/*">
-                            <a-button block :loading="subiendoFoto"><template #icon><UploadOutlined /></template>Cambiar foto</a-button>
-                        </a-upload>
-                        <a-button v-if="fotoUrl" block danger @click="eliminarFoto">
-                            <template #icon><DeleteOutlined /></template>Quitar foto
-                        </a-button>
-                    </a-space>
-                </a-card>
+        <div class="pf-grid">
+            <!-- ==================== DATOS (pestañas) ==================== -->
+            <a-card :bordered="false" class="pf-card pf-card--datos" :body-style="{ padding: '6px 22px 18px' }">
+                <a-tabs v-model:activeKey="tab" class="pf-tabs">
+                    <a-tab-pane key="datos">
+                        <template #tab><IdcardOutlined /> Datos personales</template>
+                        <a-form layout="vertical" :disabled="bloqueado" class="pf-form">
+                            <a-row :gutter="14">
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Nombre(s)" :validate-status="err(perfilErrors,'nombre') ? 'error' : ''" :help="err(perfilErrors,'nombre')">
+                                        <a-input v-model:value="perfil.nombre" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Apellido paterno">
+                                        <a-input v-model:value="perfil.paterno" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Apellido materno">
+                                        <a-input v-model:value="perfil.materno" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Teléfono">
+                                        <PhoneInput v-model:value="perfil.telefono" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Fecha de nacimiento">
+                                        <DateField v-model:value="perfil.fecha_nacimiento" limite="nacimiento" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Sexo">
+                                        <a-select v-model:value="perfil.sexo" :options="[
+                                            { value: 'M', label: 'Masculino' }, { value: 'F', label: 'Femenino' }]" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="12">
+                                    <a-form-item label="Correo electrónico" :validate-status="err(perfilErrors,'correo') ? 'error' : ''" :help="err(perfilErrors,'correo')">
+                                        <a-input v-model:value="perfil.correo" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="12">
+                                    <a-form-item label="CURP" :validate-status="err(perfilErrors,'curp') ? 'error' : ''" :help="err(perfilErrors,'curp')">
+                                        <a-input v-model:value="perfil.curp" :maxlength="18" class="pf-curp"
+                                            @input="perfil.curp = String(perfil.curp ?? '').toUpperCase().replace(/\s/g, '')" />
+                                    </a-form-item>
+                                </a-col>
+                            </a-row>
+                        </a-form>
+                    </a-tab-pane>
 
-                <!-- Documentos -->
-                <a-card :bordered="false" style="margin-top: 16px">
-                    <template #title>
-                        <span class="docs-title">
-                            <FilePdfOutlined /> Mis documentos
-                            <a-tag color="blue" style="margin-left: 8px">
-                                {{ totalAprobados }} / {{ TIPOS.length }}
-                            </a-tag>
+                    <a-tab-pane key="domicilio">
+                        <template #tab><HomeOutlined /> Carrera y domicilio</template>
+                        <a-form layout="vertical" :disabled="bloqueado" class="pf-form pf-form--issfam">
+                            <CamposIssfam :form="perfilForm" :carreras="carreras" :entidades="entidades"
+                                :disabled="bloqueado" :mostrar-curp="false" />
+                        </a-form>
+                    </a-tab-pane>
+
+                    <a-tab-pane key="password">
+                        <template #tab><KeyOutlined /> Contraseña</template>
+                        <a-form layout="vertical" class="pf-form">
+                            <a-row :gutter="14">
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Contraseña actual" :validate-status="err(passErrors,'password_actual') ? 'error' : ''" :help="err(passErrors,'password_actual')">
+                                        <a-input-password v-model:value="pass.password_actual" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Nueva contraseña" :validate-status="err(passErrors,'password_nueva') ? 'error' : ''" :help="err(passErrors,'password_nueva')">
+                                        <a-input-password v-model:value="pass.password_nueva" />
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-item label="Confirmar contraseña" :validate-status="err(passErrors,'password_nueva_confirmation') ? 'error' : ''" :help="err(passErrors,'password_nueva_confirmation')">
+                                        <a-input-password v-model:value="pass.password_nueva_confirmation" />
+                                    </a-form-item>
+                                </a-col>
+                            </a-row>
+                            <p class="pf-note">Mínimo 6 caracteres. Cambiar tu contraseña no cuenta para el candado de datos.</p>
+                        </a-form>
+                    </a-tab-pane>
+                </a-tabs>
+
+                <div class="pf-actions">
+                    <template v-if="tab !== 'password'">
+                        <span class="pf-actions__hint">
+                            <LockOutlined /> {{ bloqueado ? candado.motivo : `Guardar cuenta como 1 de tus ${candado.max_total} cambios.` }}
                         </span>
+                        <a-button type="primary" :loading="guardando" :disabled="bloqueado" @click="guardarPerfil">
+                            <template #icon><SaveOutlined /></template>Guardar cambios
+                        </a-button>
                     </template>
+                    <template v-else>
+                        <span></span>
+                        <a-button type="primary" :loading="cambiandoPass" @click="cambiarPassword">
+                            <template #icon><KeyOutlined /></template>Actualizar contraseña
+                        </a-button>
+                    </template>
+                </div>
+            </a-card>
 
-                    <a-spin :spinning="cargandoDocs">
-                        <p class="docs-hint">
-                            Sube tus documentos en formato <b>PDF</b> (máximo 5 MB cada uno).
-                            Todos inician en revisión.
-                        </p>
+            <!-- ==================== DOCUMENTOS ==================== -->
+            <a-card :bordered="false" class="pf-card pf-card--docs" :body-style="{ padding: '16px 18px' }">
+                <div class="pf-docs__head">
+                    <h3><FilePdfOutlined /> Mis documentos</h3>
+                    <span class="pf-docs__count" :class="{ ok: totalAprobados === TIPOS.length }">{{ totalAprobados }}/{{ TIPOS.length }} aprobados</span>
+                </div>
 
-                        <a-row :gutter="[12, 12]">
-                            <a-col v-for="t in TIPOS" :key="t.value" :xs="24">
-                                <div class="doc" :class="{ 'doc--ok': documentos[t.value]?.estatus === 'aprobado',
-                                                          'doc--rej': documentos[t.value]?.estatus === 'rechazado' }">
-                                    <div class="doc__head">
-                                        <span class="doc__ic"><FilePdfOutlined /></span>
-                                        <div class="doc__meta">
-                                            <b>{{ t.label }}</b>
-                                            <small>{{ t.hint }}</small>
-                                        </div>
-                                    </div>
+                <button type="button" class="video-cta" @click="videoOpen = true">
+                    <PlayCircleFilled class="video-cta__ic" />
+                    <span><b>¿Cómo subo mis documentos?</b><small>Mira el video tutorial</small></span>
+                </button>
+                <div class="docs-legible">
+                    <InfoCircleOutlined />
+                    <span>Sube cada documento en <b>PDF</b> (máx. 5 MB), <b>claro y legible</b>: completo, sin cortes ni partes borrosas.</span>
+                </div>
 
-                                    <!-- Sin documento aún -->
-                                    <div v-if="!documentos[t.value]" class="doc__empty">
-                                        <a-upload
-                                            :before-upload="(f) => subirDocumento(t.value, f)"
-                                            :show-upload-list="false"
-                                            accept="application/pdf,.pdf"
-                                            :disabled="subiendoDoc[t.value]"
-                                        >
-                                            <a-button block :loading="subiendoDoc[t.value]">
-                                                <template #icon><UploadOutlined /></template>
-                                                Subir PDF
-                                            </a-button>
+                <a-spin :spinning="cargandoDocs">
+                    <ul class="pf-docs">
+                        <li v-for="t in TIPOS" :key="t.value" class="pf-doc"
+                            :class="{ 'is-ok': documentos[t.value]?.estatus === 'aprobado', 'is-rej': documentos[t.value]?.estatus === 'rechazado' }">
+                            <span class="pf-doc__ic"><FilePdfOutlined /></span>
+                            <div class="pf-doc__txt">
+                                <b>{{ t.label }}</b>
+                                <small v-if="!documentos[t.value]">Pendiente de subir</small>
+                                <a-tooltip v-else-if="documentos[t.value].observaciones" :title="documentos[t.value].observaciones">
+                                    <small class="pf-doc__obs">{{ estatusMeta(documentos[t.value].estatus).label }} · ver motivo</small>
+                                </a-tooltip>
+                                <small v-else :class="`st-${documentos[t.value].estatus}`">
+                                    <component :is="estatusMeta(documentos[t.value].estatus).icon" />
+                                    {{ estatusMeta(documentos[t.value].estatus).label }}
+                                </small>
+                            </div>
+                            <div class="pf-doc__acc">
+                                <a-upload v-if="!documentos[t.value]" :before-upload="(f) => subirDocumento(t.value, f)"
+                                    :show-upload-list="false" accept="application/pdf,.pdf" :disabled="subiendoDoc[t.value]">
+                                    <a-button size="small" type="primary" :loading="subiendoDoc[t.value]">
+                                        <template #icon><UploadOutlined /></template>Subir
+                                    </a-button>
+                                </a-upload>
+                                <template v-else>
+                                    <a-tooltip title="Ver documento">
+                                        <button type="button" class="doc-btn doc-btn--ver" @click="verDocumento(documentos[t.value])">
+                                            <EyeOutlined />
+                                        </button>
+                                    </a-tooltip>
+                                    <template v-if="!estaAprobadoFinal(documentos[t.value])">
+                                        <a-upload :before-upload="(f) => subirDocumento(t.value, f)" :show-upload-list="false"
+                                            accept="application/pdf,.pdf" :disabled="subiendoDoc[t.value]">
+                                            <a-tooltip title="Reemplazar">
+                                                <button type="button" class="doc-btn doc-btn--rep" :disabled="subiendoDoc[t.value]">
+                                                    <UploadOutlined />
+                                                </button>
+                                            </a-tooltip>
                                         </a-upload>
-                                    </div>
+                                        <a-tooltip title="Eliminar">
+                                            <button type="button" class="doc-btn doc-btn--del" @click="eliminarDocumento(t.value, documentos[t.value])">
+                                                <DeleteOutlined />
+                                            </button>
+                                        </a-tooltip>
+                                    </template>
+                                    <a-tooltip v-else title="Aprobado: ya no se puede modificar">
+                                        <LockOutlined class="pf-doc__lock" />
+                                    </a-tooltip>
+                                </template>
+                            </div>
+                        </li>
+                    </ul>
+                </a-spin>
+            </a-card>
+        </div>
 
-                                    <!-- Con documento -->
-                                    <div v-else class="doc__body">
-                                        <div class="doc__row">
-                                            <a-tag :color="estatusMeta(documentos[t.value].estatus).color">
-                                                <component :is="estatusMeta(documentos[t.value].estatus).icon" />
-                                                {{ estatusMeta(documentos[t.value].estatus).label }}
-                                            </a-tag>
-                                            <small class="doc__peso">{{ documentos[t.value].peso_formateado }}</small>
-                                        </div>
-                                        <p class="doc__name" :title="documentos[t.value].nombre_original">
-                                            {{ documentos[t.value].nombre_original || 'documento.pdf' }}
-                                        </p>
-                                        <p v-if="documentos[t.value].observaciones" class="doc__obs">
-                                            <b>Observaciones:</b> {{ documentos[t.value].observaciones }}
-                                        </p>
+        <!-- ==================== MODAL DEL VIDEO ==================== -->
+        <a-modal
+            v-model:open="videoOpen"
+            :footer="null"
+            :closable="false"
+            width="820px"
+            centered
+            destroy-on-close
+            class="video-modal"
+            :body-style="{ padding: 0 }"
+        >
+            <!-- Encabezado personalizado -->
+            <div class="vm-head">
+                <div class="vm-head__left">
+                    <span class="vm-head__icon"><PlayCircleFilled /></span>
+                    <div class="vm-head__txt">
+                        <h3>Cómo subir tus documentos</h3>
+                        <p>Video tutorial · menos de 2 minutos</p>
+                    </div>
+                </div>
+                <button type="button" class="vm-close" @click="videoOpen = false" aria-label="Cerrar">
+                    <CloseOutlined />
+                </button>
+            </div>
 
-                                        <!-- 👇 Nota si ya está aprobado (final) -->
-                                        <p v-if="estaAprobadoFinal(documentos[t.value])" class="doc__final">
-                                            <LockOutlined />
-                                            Documento aprobado. Ya no se puede modificar.
-                                        </p>
+            <!-- Contenido -->
+            <div class="vm-body">
+                <div v-if="videoDocumentos" class="vm-player">
+                    <iframe
+                        v-if="videoDocumentos.tipo === 'iframe'"
+                        :src="videoDocumentos.src"
+                        title="Cómo subir tus documentos"
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                        allowfullscreen
+                    ></iframe>
+                    <video v-else :src="videoDocumentos.src" controls autoplay playsinline></video>
+                </div>
+                <div v-else class="vm-empty">
+                    <a-result
+                        status="info"
+                        title="El video estará disponible muy pronto"
+                        sub-title="Mientras tanto: sube cada documento en PDF, completo y legible, en su recuadro correspondiente."
+                    />
+                </div>
+            </div>
 
-                                        <a-space direction="vertical" style="width: 100%; margin-top: 10px">
-                                            <a-button
-                                                block size="small"
-                                                type="primary"
-                                                class="doc__btn-ver"
-                                                @click="verDocumento(documentos[t.value])"
-                                            >
-                                                <EyeOutlined class="doc__btn-ver-icon" />
-                                                <span>Ver PDF</span>
-                                            </a-button>
+            <!-- Pie con tips rápidos -->
+            <div class="vm-foot">
+                <span class="vm-tip"><FilePdfOutlined /> Sube cada documento en PDF</span>
+                <span class="vm-tip"><InfoCircleOutlined /> Máximo 5 MB por archivo</span>
+                <span class="vm-tip"><CheckCircleOutlined /> Claro, completo y legible</span>
+            </div>
+        </a-modal>
 
-                                            <!-- Reemplazar: solo si NO está aprobado -->
-                                            <a-upload
-                                                :before-upload="(f) => subirDocumento(t.value, f)"
-                                                :show-upload-list="false"
-                                                accept="application/pdf,.pdf"
-                                                :disabled="subiendoDoc[t.value] || !puedeReemplazar(documentos[t.value])"
-                                            >
-                                                <a-button
-                                                    block size="small"
-                                                    :loading="subiendoDoc[t.value]"
-                                                    :disabled="!puedeReemplazar(documentos[t.value])"
-                                                >
-                                                    <template #icon><UploadOutlined /></template>
-                                                    {{ estaAprobadoFinal(documentos[t.value]) ? 'Aprobado' : 'Reemplazar' }}
-                                                </a-button>
-                                            </a-upload>
-
-                                            <!-- Eliminar: solo si NO está aprobado -->
-                                            <a-button
-                                                block size="small" danger
-                                                :disabled="!puedeEliminar(documentos[t.value])"
-                                                @click="eliminarDocumento(t.value, documentos[t.value])"
-                                            >
-                                                <template #icon><DeleteOutlined /></template>
-                                                {{ estaAprobadoFinal(documentos[t.value]) ? 'Aprobado' : 'Eliminar' }}
-                                            </a-button>
-                                        </a-space>
-                                    </div>
-                                </div>
-                            </a-col>
-                        </a-row>
-                    </a-spin>
-                </a-card>
-            </a-col>
-
-            <!-- ==================== COLUMNA DERECHA ==================== -->
-            <a-col :xs="24" :md="16">
-                <a-card :bordered="false" title="Datos personales">
-                    <a-form layout="vertical">
-                        <a-row :gutter="16">
-                            <a-col :xs="24" :sm="12">
-                                <a-form-item label="Nombre(s)" :validate-status="err(perfilErrors,'nombre') ? 'error' : ''" :help="err(perfilErrors,'nombre')">
-                                    <a-input v-model:value="perfil.nombre" />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :xs="24" :sm="12">
-                                <a-form-item label="Apellido paterno">
-                                    <a-input v-model:value="perfil.paterno" />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :xs="24" :sm="12">
-                                <a-form-item label="Apellido materno">
-                                    <a-input v-model:value="perfil.materno" />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :xs="24" :sm="12">
-                                <a-form-item label="Teléfono">
-                                    <PhoneInput v-model:value="perfil.telefono" />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :xs="24" :sm="12">
-                                <a-form-item label="Fecha de nacimiento">
-                                    <DateField v-model:value="perfil.fecha_nacimiento" limite="nacimiento" />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :xs="24" :sm="12">
-                                <a-form-item label="Sexo">
-                                    <a-select v-model:value="perfil.sexo" :options="[
-                                        { value: 'M', label: 'Masculino' }, { value: 'F', label: 'Femenino' }]" />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :xs="24">
-                                <a-form-item label="Correo electrónico" :validate-status="err(perfilErrors,'correo') ? 'error' : ''" :help="err(perfilErrors,'correo')">
-                                    <a-input v-model:value="perfil.correo" />
-                                </a-form-item>
-                            </a-col>
-                        </a-row>
-                        <div class="sains-section-actions">
-                            <a-button type="primary" :loading="guardando" @click="guardarPerfil">Guardar cambios</a-button>
-                        </div>
-                    </a-form>
-                </a-card>
-
-                <a-card :bordered="false" title="Cambiar contraseña" style="margin-top: 16px">
-                    <a-form layout="vertical">
-                        <a-form-item label="Contraseña actual" :validate-status="err(passErrors,'password_actual') ? 'error' : ''" :help="err(passErrors,'password_actual')">
-                            <a-input-password v-model:value="pass.password_actual" />
-                        </a-form-item>
-                        <a-row :gutter="16">
-                            <a-col :xs="24" :sm="12">
-                                <a-form-item label="Nueva contraseña" :validate-status="err(passErrors,'password_nueva') ? 'error' : ''" :help="err(passErrors,'password_nueva')">
-                                    <a-input-password v-model:value="pass.password_nueva" />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :xs="24" :sm="12">
-                                <a-form-item label="Confirmar contraseña" :validate-status="err(passErrors,'password_nueva_confirmation') ? 'error' : ''" :help="err(passErrors,'password_nueva_confirmation')">
-                                    <a-input-password v-model:value="pass.password_nueva_confirmation" />
-                                </a-form-item>
-                            </a-col>
-                        </a-row>
-                        <div class="sains-section-actions">
-                            <a-button :loading="cambiandoPass" @click="cambiarPassword">Actualizar contraseña</a-button>
-                        </div>
-                    </a-form>
-                </a-card>
-            </a-col>
-        </a-row>
-
-        <!-- ================= MODAL DOCUMENTOS (componente) ================= -->
         <ModalDocumentos
             v-model:open="pdfModal"
             :documento="pdfActivo"
@@ -513,85 +602,289 @@ const err = (bag, k) => (bag && bag[k] ? bag[k][0] : '');
 </template>
 
 <style scoped>
-.perfil-foto { text-align: center; overflow: hidden; position: relative; padding-top: 0; }
-.perfil-foto :deep(.ant-card-body) { padding-top: 0; }
-.perfil-foto__cover {
-    height: 78px; margin: 0 -24px 0; background: linear-gradient(135deg, #4f46e5, #9333ea);
+/* ==================== Encabezado ==================== */
+.pf-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 20px 26px;
+    margin-bottom: 16px;
+    border-radius: 20px;
+    color: #fff;
+    background:
+        radial-gradient(circle at 92% -30%, rgba(245, 179, 1, .35), transparent 45%),
+        linear-gradient(120deg, #0e2d66 0%, #1851ad 70%, #1d63c9 100%);
+    box-shadow: 0 22px 44px -26px rgba(14, 45, 102, .7);
 }
-.perfil-foto__avatar {
-    margin-top: -48px; display: inline-block; padding: 4px; border-radius: 50%; background: #fff;
-    box-shadow: 0 6px 18px -8px rgba(15, 23, 42, .3);
+.pf-hero__foto { position: relative; flex: none; }
+.pf-hero__avatar {
+    border: 4px solid rgba(255, 255, 255, .9);
+    background: linear-gradient(135deg, #f5b301, #d99a00);
+    font-size: 30px; font-weight: 800; color: #fff;
+    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .5);
 }
-.perfil-foto h3 { margin: 12px 0 2px; }
-.perfil-foto__mail { color: #94a3b8; font-size: 12.5px; margin: 0 0 10px; word-break: break-all; }
-
-/* ============ Documentos ============ */
-.docs-title { display: inline-flex; align-items: center; gap: 6px; }
-.docs-hint { color: #64748b; font-size: 12.5px; margin: 0 0 14px; line-height: 1.5; }
-
-.doc {
-    border: 1.5px solid #eef1f8;
-    border-radius: 14px;
-    padding: 12px 12px 10px;
-    background: #fafbff;
-    transition: border-color .2s ease, background .2s ease;
+.pf-hero__cam {
+    position: absolute; right: -2px; bottom: -2px;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center;
+    border: 3px solid #1851ad; background: #f5b301; color: #0e2d66;
+    font-size: 14px; cursor: pointer; transition: transform .15s ease;
 }
-.doc--ok  { border-color: #bbf7d0; background: #f0fdf4; }
-.doc--rej { border-color: #fecaca; background: #fef2f2; }
+.pf-hero__cam:hover { transform: scale(1.1); }
+.pf-hero__info { flex: 1; min-width: 0; }
+.pf-hero__eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .8; }
+.pf-hero__name { margin: 2px 0 6px; font-size: 1.55rem; font-weight: 800; color: #fff; line-height: 1.2; letter-spacing: -.01em; }
+.pf-hero__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; color: rgba(255, 255, 255, .88); }
+.pf-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    background: rgba(255, 255, 255, .15); border: 1px solid rgba(255, 255, 255, .22);
+}
+.pf-chip--gold { background: #f5b301; border-color: #f5b301; color: #0e2d66; }
+.pf-hero__quitar { color: rgba(255, 255, 255, .7); font-size: 12px; text-decoration: underline; cursor: pointer; }
+.pf-hero__quitar:hover { color: #fff; }
+.pf-hero__side { flex: none; display: flex; align-items: center; gap: 14px; }
+.pf-lock {
+    padding: 10px 14px; border-radius: 14px; min-width: 210px;
+    background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .2);
+}
+.pf-lock.is-lock { background: rgba(220, 38, 38, .25); border-color: rgba(254, 202, 202, .5); }
+.pf-lock__top { font-size: 12px; font-weight: 700; display: flex; gap: 6px; align-items: center; }
+.pf-lock__bar { display: flex; gap: 4px; margin: 7px 0 5px; }
+.pf-lock__bar span { flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .25); }
+.pf-lock__bar span.used { background: #f5b301; }
+.pf-lock small { font-size: 11.5px; opacity: .85; }
+.pf-hero__cont { background: #fff !important; color: #0e2d66 !important; border: 0 !important; font-weight: 700; }
 
-.doc__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.doc__ic {
-    width: 34px; height: 34px; flex: none;
+/* ==================== Rejilla ==================== */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
+.pf-card { border-radius: 18px; overflow: hidden; }
+
+.pf-tabs :deep(.ant-tabs-nav) { margin-bottom: 10px; }
+.pf-tabs :deep(.ant-tabs-tab) { font-weight: 600; }
+.pf-form :deep(.ant-form-item) { margin-bottom: 12px; }
+.pf-form :deep(.ant-form-item-label) { padding-bottom: 4px; }
+.pf-form--issfam :deep(.ant-divider) { margin: 4px 0 10px; font-size: 13px; }
+.pf-curp :deep(input), .pf-curp { text-transform: uppercase; letter-spacing: .04em; }
+.pf-note { margin: 0; font-size: 12.5px; color: #64748b; }
+
+.pf-actions {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding-top: 12px; margin-top: 2px; border-top: 1px solid var(--sains-line);
+}
+.pf-actions__hint { font-size: 12.5px; color: #64748b; display: inline-flex; gap: 6px; align-items: center; }
+
+/* ==================== Documentos ==================== */
+.pf-docs__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.pf-docs__head h3 { margin: 0; font-size: 15px; font-weight: 700; display: flex; gap: 8px; align-items: center; }
+.pf-docs__count { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: #eef3f9; color: var(--sains-primary); }
+.pf-docs__count.ok { background: #dcfce7; color: #15803d; }
+
+.video-cta {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 9px 12px; margin-bottom: 10px; border-radius: 12px; cursor: pointer; text-align: left;
+    border: 1px solid #c5d5e9; background: linear-gradient(135deg, #eef3f9, #fff);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.video-cta:hover { border-color: var(--sains-primary); box-shadow: 0 6px 16px -10px rgba(24, 81, 173, .5); }
+.video-cta__ic { font-size: 30px; color: var(--sains-gold, #f5b301); }
+.video-cta b { display: block; font-size: 13px; color: #0f172a; }
+.video-cta small { font-size: 11.5px; color: #64748b; }
+.docs-legible {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 8px 10px; margin-bottom: 12px; border-radius: 10px;
+    background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 12px; line-height: 1.45;
+}
+.docs-legible :deep(.anticon) { margin-top: 2px; }
+
+.pf-docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pf-doc {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 12px; border: 1px solid #eef1f8; background: #fafbfd;
+    overflow: hidden;
+}
+.pf-doc.is-ok { border-color: #bbf7d0; background: #f0fdf4; }
+.pf-doc.is-rej { border-color: #fecaca; background: #fef2f2; }
+.pf-doc__ic {
+    flex: none; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+    background: #fee2e2; color: #dc2626; font-size: 15px;
+}
+.pf-doc__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.pf-doc__txt b { font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-doc__txt small { font-size: 11.5px; color: #94a3b8; display: inline-flex; gap: 4px; align-items: center; }
+.pf-doc__txt .st-aprobado { color: #15803d; }
+.pf-doc__txt .st-pendiente, .pf-doc__txt .st-revision { color: #b45309; }
+.pf-doc__obs { color: #b91c1c !important; text-decoration: underline dotted; cursor: help; }
+.pf-doc__acc { flex: none; display: flex; gap: 6px; align-items: center; }
+.pf-doc__lock { color: #15803d; font-size: 15px; padding: 0 6px; }
+
+/* ==================== Botones de acción documento ==================== */
+.doc-btn {
     display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 9px; font-size: 16px;
-    background: linear-gradient(135deg, #fee2e2, #fecaca);
-    color: #dc2626;
+    width: 30px; height: 30px; padding: 0;
+    border-radius: 8px; border: 1px solid transparent;
+    font-size: 14px; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, transform .1s ease, box-shadow .15s ease;
 }
-.doc__meta { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-.doc__meta b { font-size: 13px; color: #0f172a; }
-.doc__meta small { color: #94a3b8; font-size: 11px; }
+.doc-btn:active { transform: scale(.92); }
+.doc-btn:disabled { opacity: .55; cursor: not-allowed; }
 
-.doc__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.doc__peso { color: #94a3b8; font-size: 11px; }
-.doc__name {
-    font-size: 12px; color: #334155; margin: 8px 0 4px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+/* Ver (ojito) */
+.doc-btn--ver {
+    background: #e8f0fe; color: #1851ad; border-color: #cddffb;
 }
-.doc__obs {
-    font-size: 11.5px; color: #b91c1c; background: #fff1f2;
-    padding: 6px 8px; border-radius: 8px; margin: 4px 0 0;
+.doc-btn--ver:hover {
+    background: #1851ad; color: #fff; border-color: #1851ad;
+    box-shadow: 0 4px 12px -4px rgba(24, 81, 173, .55);
 }
 
-/* 👇 Nota de estado final (aprobado) */
-.doc__final {
+/* Reemplazar */
+.doc-btn--rep {
+    background: #fff7e6; color: #d97706; border-color: #fde3b0;
+}
+.doc-btn--rep:hover {
+    background: #d97706; color: #fff; border-color: #d97706;
+    box-shadow: 0 4px 12px -4px rgba(217, 119, 6, .55);
+}
+
+/* Eliminar */
+.doc-btn--del {
+    background: #fef2f2; color: #dc2626; border-color: #fadcdc;
+}
+.doc-btn--del:hover {
+    background: #dc2626; color: #fff; border-color: #dc2626;
+    box-shadow: 0 4px 12px -4px rgba(220, 38, 38, .55);
+}
+
+/* ==================== Modal del video ==================== */
+.video-modal :deep(.ant-modal-content) {
+    padding: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px -20px rgba(14, 45, 102, .45);
+}
+.video-modal :deep(.ant-modal-body) {
+    padding: 0;
+}
+
+/* Encabezado personalizado */
+.vm-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 18px;
+    background: linear-gradient(120deg, #0e2d66 0%, #1851ad 70%, #1d63c9 100%);
+    color: #fff;
+}
+.vm-head__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+.vm-head__icon {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: #f5b301;
+    color: #0e2d66;
+    font-size: 22px;
+    box-shadow: 0 6px 14px -6px rgba(245, 179, 1, .6);
+}
+.vm-head__txt { min-width: 0; }
+.vm-head__txt h3 {
+    margin: 0;
+    font-size: 15.5px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+}
+.vm-head__txt p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, .75);
+}
+.vm-close {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .25);
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background .15s ease, transform .15s ease;
+}
+.vm-close:hover {
+    background: rgba(255, 255, 255, .25);
+    transform: rotate(90deg);
+}
+
+/* Reproductor */
+.vm-body {
+    background: #0b1220;
+    padding: 0;
+}
+.vm-player {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+.vm-player iframe,
+.vm-player video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+.vm-empty {
+    padding: 20px;
+    background: #fff;
+}
+
+/* Pie con tips */
+.vm-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 12px 18px;
+    background: #f8fafc;
+    border-top: 1px solid #eef1f8;
+}
+.vm-tip {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    margin: 6px 0 0;
-    font-size: 11px;
-    font-weight: 700;
-    color: #065f46;
-    background: #d1fae5;
-    border: 1px solid #a7f3d0;
-    padding: 4px 9px;
-    border-radius: 7px;
-    width: fit-content;
-}
-.doc__final :deep(.anticon) { font-size: 11px; }
-
-.doc__btn-ver {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
     gap: 6px;
+    font-size: 12px;
+    color: #475569;
     font-weight: 600;
 }
-.doc__btn-ver-icon {
-    display: inline-flex;
-    align-items: center;
-    font-size: 14px;
-    line-height: 1;
-    vertical-align: middle;
+.vm-tip :deep(.anticon) {
+    color: #1851ad;
 }
-.doc__btn-ver span { line-height: 1; }
+
+/* ==================== Responsive ==================== */
+@media (max-width: 1100px) {
+    .pf-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+    .pf-hero { flex-wrap: wrap; padding: 18px; }
+    .pf-hero__side { width: 100%; justify-content: space-between; }
+    .pf-lock { flex: 1; min-width: 0; }
+
+    .vm-head { padding: 12px 14px; }
+    .vm-head__txt h3 { font-size: 14px; }
+    .vm-head__txt p { font-size: 11px; }
+    .vm-foot { padding: 10px 14px; }
+}
 </style>

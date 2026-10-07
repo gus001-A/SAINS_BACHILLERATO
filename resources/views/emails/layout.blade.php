@@ -1,8 +1,8 @@
 @php
     /**
-     * Layout base para correos transaccionales de SAINS.
+     * Layout base para correos transaccionales de SAINS Bachillerato · ISSFAM.
      * Diseño a prueba de clientes de correo: tablas, estilos en línea, sin flex/grid,
-     * sin @keyframes ni backdrop-filter. Colores de marca SAINS (índigo).
+     * sin @keyframes ni backdrop-filter. Colores institucionales (azul marino + dorado).
      *
      * Slots esperados desde las vistas hijas:
      *   @section('badge')      texto de la etiqueta superior
@@ -13,7 +13,7 @@
      */
     $accent = trim($__env->yieldContent('accent', 'indigo'));
     $accents = [
-        'indigo' => ['#4f46e5', '#4338ca', '#eef2ff', '#3730a3'],
+        'indigo' => ['#1851ad', '#214784', '#eef3f9', '#1b3a6c'],
         'green'  => ['#16a34a', '#15803d', '#ecfdf5', '#166534'],
         'red'    => ['#dc2626', '#b91c1c', '#fef2f2', '#991b1b'],
         'amber'  => ['#d97706', '#b45309', '#fffbeb', '#92400e'],
@@ -26,10 +26,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>@yield('titulo', 'SAINS')</title>
+    <title>@yield('titulo', 'SAINS Bachillerato')</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f1f5f9; -webkit-font-smoothing:antialiased; font-family:'Segoe UI', -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif; color:#1e293b;">
-    <span style="display:none; font-size:1px; color:#f1f5f9;">@yield('preheader', 'Actualización de tu cuenta SAINS')</span>
+    <span style="display:none; font-size:1px; color:#f1f5f9;">@yield('preheader', 'Actualización de tu cuenta de SAINS Bachillerato')</span>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;">
         <tr>
@@ -47,8 +47,11 @@
                                         <div style="font-size:26px; font-weight:800; color:#ffffff; margin-top:18px; letter-spacing:-0.02em; line-height:1.2;">@yield('titulo', 'SAINS')</div>
                                         <div style="font-size:14px; color:rgba(255,255,255,0.9); margin-top:6px;">@yield('subtitulo')</div>
                                     </td>
-                                    <td align="right" valign="top" width="70">
-                                        <div style="width:52px; height:52px; line-height:52px; text-align:center; background-color:rgba(255,255,255,0.2); border-radius:14px; font-size:24px; font-weight:800; color:#ffffff;">S</div>
+                                    <td align="right" valign="top" width="140">
+                                        <div style="width:128px; background-color:#ffffff; border-radius:14px; text-align:center; padding:8px 0;">
+                                            <img src="{{ asset('images/bachillerato-nacional-sm.png') }}" width="108" alt="Bachillerato Nacional SAINS"
+                                                 style="display:inline-block; width:108px; height:auto; border:0;">
+                                        </div>
                                     </td>
                                 </tr>
                             </table>
@@ -72,9 +75,11 @@
                                 <tr>
                                     <td style="padding:16px 20px; font-size:13px; color:#475569;">
                                         ¿Necesitas ayuda? Escríbenos a
-                                        <a href="mailto:sains.ingreso@gmail.com" style="color:{{ $c1 }}; font-weight:600; text-decoration:none;">sains.ingreso@gmail.com</a>
-                                        o llámanos al
-                                        <a href="tel:7771886018" style="color:{{ $c1 }}; font-weight:600; text-decoration:none;">777 188 6018</a>.
+                                        <a href="mailto:sains.bachillerato@gmail.com" style="color:{{ $c1 }}; font-weight:600; text-decoration:none;">sains.bachillerato@gmail.com</a>
+                                        o por WhatsApp al
+                                        <a href="https://wa.me/527771886018" style="color:{{ $c1 }}; font-weight:600; text-decoration:none;">777 188 6018</a>
+                                        y
+                                        <a href="https://wa.me/527772505603" style="color:{{ $c1 }}; font-weight:600; text-decoration:none;">777 250 5603</a>.
                                     </td>
                                 </tr>
                             </table>
@@ -83,10 +88,11 @@
 
                     <!-- Pie -->
                     <tr>
-                        <td style="background-color:#0f172a; padding:26px 40px; text-align:center;">
-                            <div style="font-size:18px; font-weight:800; color:#ffffff; letter-spacing:2px;">SAINS</div>
-                            <div style="font-size:11px; color:rgba(255,255,255,0.55); margin-top:8px; line-height:1.7;">
-                                © {{ date('Y') }} SAINS Educación · Preparación para el ingreso a la universidad<br>
+                        <td style="background-color:#0e2d66; padding:26px 40px; text-align:center; border-top:4px solid #f5b301;">
+                            <div style="font-size:16px; font-weight:800; color:#ffffff; letter-spacing:1px;">SAINS Bachillerato · ISSFAM</div>
+                            <div style="font-size:11px; color:rgba(255,255,255,0.62); margin-top:8px; line-height:1.7;">
+                                Bachillerato Tecnológico con Formación Profesional para personal y beneficiarios de la Guardia Nacional<br>
+                                © {{ date('Y') }} SAINS · Instituto de Seguridad Social para las Fuerzas Armadas Mexicanas<br>
                                 Este es un correo automático, por favor no respondas a este mensaje.
                             </div>
                         </td>

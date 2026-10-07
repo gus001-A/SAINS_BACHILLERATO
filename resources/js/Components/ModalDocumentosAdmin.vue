@@ -138,7 +138,7 @@ function abrirEnNuevaPestana() {
 :deep(.pdf-admin-modal .ant-modal-header) {
     padding: 22px 68px 22px 26px;
     margin: 0;
-    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    background: linear-gradient(135deg, #f8fafc, #eef3f9);
     border-bottom: 1px solid #e2e8f0;
 }
 
@@ -272,16 +272,16 @@ function abrirEnNuevaPestana() {
 }
 
 .pdf-actions__btn--download {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    background: linear-gradient(135deg, #1851ad, #1550d0) !important;
     border-color: transparent !important;
     color: #fff !important;
-    box-shadow: 0 14px 28px -12px rgba(79, 70, 229, .75);
+    box-shadow: 0 14px 28px -12px rgba(24, 81, 173, .75);
     min-width: 200px;
 }
 
 .pdf-actions__btn--download:hover {
     filter: brightness(1.05);
-    box-shadow: 0 18px 36px -12px rgba(79, 70, 229, .9);
+    box-shadow: 0 18px 36px -12px rgba(24, 81, 173, .9);
     color: #fff !important;
 }
 

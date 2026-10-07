@@ -161,7 +161,7 @@ onBeforeUnmount(limpiarPreview);
     padding: 7px 8px 7px 12px; background: #f8fafc; border-bottom: 1px solid var(--sains-line);
     font-size: 12px; font-weight: 600; color: #475569;
 }
-.cmp-preview__head .anticon { color: #6366f1; margin-inline-end: 4px; }
+.cmp-preview__head .anticon { color: #1664db; margin-inline-end: 4px; }
 .cmp-preview__img { display: block; width: 100%; max-height: 260px; object-fit: contain; background: #0f172a; }
 .cmp-preview__pdf { display: block; width: 100%; height: 320px; border: 0; background: #fff; }
 
@@ -170,5 +170,5 @@ onBeforeUnmount(limpiarPreview);
     padding: 10px 12px; border-radius: 10px; background: #f8fafc; border: 1px solid var(--sains-line);
     font-size: 13px;
 }
-.cmp-actual a { color: #4f46e5; font-weight: 550; }
+.cmp-actual a { color: #1851ad; font-weight: 550; }
 </style>

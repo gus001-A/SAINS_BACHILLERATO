@@ -194,6 +194,13 @@ class ExamenRealizadoController extends Controller
             }
             
             $respuestasProcesadas[] = [
+                'indice' => $index,
+                'pregunta_id' => $preguntaId,
+                'opciones' => $pregunta ? $pregunta->opciones->map(fn ($o) => [
+                    'texto' => $o->texto,
+                    'correcta' => (bool) $o->es_correcta,
+                ])->values() : [],
+                'editada' => !empty($respuesta['editada']),
                 'numero' => $index + 1,
                 'pregunta' => $respuesta['pregunta'] ?? ($pregunta ? $pregunta->pregunta : 'Pregunta no disponible'),
                 'respuesta' => $respuesta['respuesta'] ?? 'No respondida',
@@ -211,7 +218,7 @@ class ExamenRealizadoController extends Controller
             'examen' => [
                 'id' => $examen->id,
                 'estudiante' => $est ? trim("{$est->nombre} {$est->paterno} {$est->materno}") : 'Estudiante #' . $examen->estudiante,
-                'estudiante_id' => $examen->estudiante,
+                'estudiante_id' => $est?->usuario,
                 'tipo_examen' => $examen->examenGenerado?->tipo_examen ?? 'Simulador',
                 'calificacion' => $examen->calificacion !== null ? round($examen->calificacion, 1) : null,
                 'intento' => $examen->intento,
@@ -224,7 +231,87 @@ class ExamenRealizadoController extends Controller
                 'incorrectas' => $totalPreguntas - $correctas,
             ],
             'respuestas' => $respuestasProcesadas,
+            'ediciones' => collect(is_array($respuestasRaw) ? ($respuestasRaw['ediciones'] ?? []) : [])
+                ->sortByDesc('fecha')->values(),
         ]);
+    }
+
+    /**
+     * El administrador corrige respuestas y/o la calificación final de un examen.
+     * Cada respuesta cambiada se recalifica con la opción correcta de la pregunta;
+     * la calificación se recalcula salvo que se capture una manual.
+     */
+    public function update(Request $request, $id)
+    {
+        $examen = ExamenRealizado::findOrFail($id);
+
+        $datos = $request->validate([
+            'cambios' => ['array'],
+            'cambios.*.indice' => ['required', 'integer', 'min:0'],
+            'cambios.*.respuesta' => ['required', 'string', 'max:2000'],
+            'calificacion_manual' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'motivo' => ['nullable', 'string', 'max:500'],
+        ], [], ['calificacion_manual' => 'calificación final', 'motivo' => 'motivo']);
+
+        $raw = $examen->respuestas;
+        if (is_string($raw)) {
+            $raw = json_decode($raw, true);
+        }
+        $raw = is_array($raw) ? $raw : [];
+        $envuelto = array_key_exists('respuestas', $raw);
+        $lista = $envuelto ? ($raw['respuestas'] ?? []) : $raw;
+
+        $preguntas = Pregunta::with('opciones')
+            ->whereIn('id', collect($lista)->pluck('pregunta_id')->filter()->all())
+            ->get()->keyBy('id');
+
+        $modificadas = 0;
+        foreach ($datos['cambios'] ?? [] as $cambio) {
+            $i = $cambio['indice'];
+            if (!isset($lista[$i])) {
+                continue;
+            }
+            $pregunta = $preguntas[$lista[$i]['pregunta_id'] ?? 0] ?? null;
+            $opcion = $pregunta?->opciones->firstWhere('texto', $cambio['respuesta']);
+            if (!$opcion || ($lista[$i]['respuesta'] ?? null) === $opcion->texto) {
+                continue;
+            }
+            $lista[$i]['respuesta'] = $opcion->texto;
+            $lista[$i]['estatus'] = $opcion->es_correcta ? 'correcta' : 'incorrecta';
+            unset($lista[$i]['correcta']);
+            $lista[$i]['editada'] = true;
+            $modificadas++;
+        }
+
+        $total = count($lista);
+        $aciertos = collect($lista)->filter(fn ($r) => ($r['estatus'] ?? null) === 'correcta'
+            || (($r['correcta'] ?? false) === true))->count();
+        $calculada = $total > 0 ? round($aciertos / $total * 100) : 0;
+        $nueva = $datos['calificacion_manual'] ?? $calculada;
+
+        if ($modificadas === 0 && (float) $nueva === (float) $examen->calificacion) {
+            return back()->with('info', 'No hubo cambios que guardar.');
+        }
+
+        $admin = $request->user();
+        $ediciones = $raw['ediciones'] ?? [];
+        $ediciones[] = [
+            'fecha' => now()->toDateTimeString(),
+            'admin' => optional($admin->administrador)->nombre
+                ? trim($admin->administrador->nombre . ' ' . $admin->administrador->apellido_paterno)
+                : $admin->correo,
+            'respuestas_modificadas' => $modificadas,
+            'calificacion_anterior' => $examen->calificacion,
+            'calificacion_nueva' => $nueva,
+            'manual' => isset($datos['calificacion_manual']),
+            'motivo' => $datos['motivo'] ?? null,
+        ];
+
+        $examen->respuestas = json_encode(['respuestas' => $lista, 'ediciones' => $ediciones]);
+        $examen->calificacion = $nueva;
+        $examen->save();
+
+        return back()->with('success', "Examen actualizado: {$modificadas} respuesta(s) modificada(s), calificación final {$nueva}.");
     }
     
     public function export(Request $request)

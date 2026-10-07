@@ -194,18 +194,18 @@ function elegir(m) {
     border: 1px solid #e2e8f0; border-radius: 13px; cursor: pointer; background: #fff;
     transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
-.pay-method:hover:not(.off) { border-color: #c7d2fe; }
-.pay-method.on { border-color: #4f46e5; background: #eef2ff; box-shadow: 0 0 0 3px rgba(79, 70, 229, .1); }
+.pay-method:hover:not(.off) { border-color: #c5d5e9; }
+.pay-method.on { border-color: #1851ad; background: #eef3f9; box-shadow: 0 0 0 3px rgba(24, 81, 173, .1); }
 .pay-method.off { opacity: .55; cursor: not-allowed; }
 .pay-radio {
     width: 18px; height: 18px; flex: none; border-radius: 50%; border: 2px solid #cbd5e1;
     position: relative; transition: border-color .15s ease;
 }
-.pay-radio.on { border-color: #4f46e5; }
+.pay-radio.on { border-color: #1851ad; }
 .pay-radio.on::after {
-    content: ''; position: absolute; inset: 3px; border-radius: 50%; background: #4f46e5;
+    content: ''; position: absolute; inset: 3px; border-radius: 50%; background: #1851ad;
 }
-.pay-method-ico { font-size: 20px; color: #4f46e5; flex: none; }
+.pay-method-ico { font-size: 20px; color: #1851ad; flex: none; }
 .pay-method-txt { display: flex; flex-direction: column; line-height: 1.3; flex: 1; min-width: 0; }
 .pay-method-txt b { font-size: 14px; color: #0f172a; }
 .pay-method-txt small { font-size: 12px; color: #64748b; }

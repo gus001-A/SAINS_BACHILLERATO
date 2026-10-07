@@ -4,15 +4,15 @@ import esES from 'ant-design-vue/es/locale/es_ES';
 /** Locale español para <a-config-provider :locale="antdLocale"> (calendarios, etc.). */
 export const antdLocale = esES;
 
-export const SAINS_PRIMARY = '#4f46e5';
-export const SAINS_PRIMARY_SOFT = 'rgba(79, 70, 229, 0.10)';
+export const SAINS_PRIMARY = '#1851ad';
+export const SAINS_PRIMARY_SOFT = 'rgba(24, 81, 173, 0.10)';
 
-/** Azul institucional SAINS (usado en las pantallas de autenticación). */
-export const SAINS_BLUE = '#1d4ed8';
+/** Azul marino institucional ISSFAM (usado en las pantallas de autenticación). */
+export const SAINS_BLUE = '#15509b';
 
 /**
  * Tema de Ant Design Vue para las pantallas públicas de autenticación
- * (login, registro, recuperar contraseña). Azul + dorado, acorde al logo.
+ * (login, registro, recuperar contraseña). Azul marino + dorado (ISSFAM).
  */
 export const authTheme = {
     algorithm: antdThemeAlgorithms.defaultAlgorithm,
@@ -20,7 +20,7 @@ export const authTheme = {
         colorPrimary: SAINS_BLUE,
         colorInfo: SAINS_BLUE,
         colorLink: SAINS_BLUE,
-        colorLinkHover: '#2563eb',
+        colorLinkHover: '#135fbc',
         colorError: '#dc2626',
         colorTextBase: '#1e293b',
         borderRadius: 12,
@@ -32,8 +32,8 @@ export const authTheme = {
         wireframe: false,
     },
     components: {
-        Input: { activeShadow: '0 0 0 3px rgba(29, 78, 216, 0.12)' },
-        Button: { primaryShadow: '0 10px 24px -10px rgba(29, 78, 216, 0.55)', fontWeight: 600 },
+        Input: { activeShadow: '0 0 0 3px rgba(21, 80, 155, 0.12)' },
+        Button: { primaryShadow: '0 10px 24px -10px rgba(21, 80, 155, 0.55)', fontWeight: 600 },
         Checkbox: { colorPrimary: SAINS_BLUE },
     },
 };
@@ -48,7 +48,7 @@ export const antdTheme = {
         colorPrimary: SAINS_PRIMARY,
         colorInfo: SAINS_PRIMARY,
         colorLink: SAINS_PRIMARY,
-        colorLinkHover: '#6366f1',
+        colorLinkHover: '#1664db',
         colorSuccess: '#16a34a',
         colorWarning: '#d97706',
         colorError: '#dc2626',
@@ -90,7 +90,7 @@ export const antdTheme = {
             headerBg: '#fafbfd',
             headerColor: '#475569',
             headerSplitColor: 'transparent',
-            rowHoverBg: '#f7f8fc',
+            rowHoverBg: '#f6f8fc',
             borderColor: '#eef1f6',
             cellPaddingBlock: 12,
         },
@@ -103,7 +103,7 @@ export const antdTheme = {
         },
         Button: {
             controlHeight: 38,
-            primaryShadow: '0 6px 16px -8px rgba(79, 70, 229, 0.5)',
+            primaryShadow: '0 6px 16px -8px rgba(24, 81, 173, 0.5)',
             fontWeight: 500,
         },
         Segmented: {
@@ -113,7 +113,7 @@ export const antdTheme = {
             borderRadiusSM: 6,
         },
         Input: {
-            activeShadow: '0 0 0 3px rgba(79, 70, 229, 0.12)',
+            activeShadow: '0 0 0 3px rgba(24, 81, 173, 0.12)',
         },
         Select: {
             optionSelectedBg: SAINS_PRIMARY_SOFT,
